@@ -144,12 +144,8 @@ export default function AdminPage() {
               />
 
               <Card>
-                <CardHeader className="flex flex-row justify-between">
+                <CardHeader>
                   <CardTitle>Aktuelle Besuche</CardTitle>
-                  <Button variant="outline" onClick={() => setIsAddUserOpen(true)}>
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Neuer Benutzer
-                  </Button>
                 </CardHeader>
                 <CardContent>
                   <div className="rounded-md border">
@@ -184,8 +180,12 @@ export default function AdminPage() {
           {user.isAdmin && (
             <TabsContent value="users">
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between">
                   <CardTitle>Benutzerverwaltung</CardTitle>
+                  <Button onClick={() => setIsAddUserOpen(true)}>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Neuer Benutzer
+                  </Button>
                 </CardHeader>
                 <CardContent>
                   <Table>
