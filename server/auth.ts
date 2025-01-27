@@ -3,36 +3,10 @@ import { IVerifyOptions, Strategy as LocalStrategy } from "passport-local";
 import { type Express } from "express";
 import session from "express-session";
 import createMemoryStore from "memorystore";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
-import { promisify } from "util";
 import { users, insertUserSchema, type SelectUser } from "@db/schema";
 import { db } from "@db";
 import { eq } from "drizzle-orm";
-
-const scryptAsync = promisify(scrypt);
-
-const crypto = {
-  hash: async (password: string): Promise<string> => {
-    const salt = randomBytes(16).toString("hex");
-    const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-    return `${buf.toString("hex")}.${salt}`;
-  },
-  compare: async (suppliedPassword: string, storedPassword: string): Promise<boolean> => {
-    try {
-      const [hashedPassword, salt] = storedPassword.split(".");
-      if (!hashedPassword || !salt) {
-        console.error("Invalid stored password format");
-        return false;
-      }
-      const hashedPasswordBuf = Buffer.from(hashedPassword, "hex");
-      const suppliedPasswordBuf = (await scryptAsync(suppliedPassword, salt, 64)) as Buffer;
-      return timingSafeEqual(hashedPasswordBuf, suppliedPasswordBuf);
-    } catch (error) {
-      console.error("Error comparing passwords:", error);
-      return false;
-    }
-  }
-};
+import { hashPassword, verifyPassword } from "./utils/crypto";
 
 // extend express user object with our schema
 declare global {
@@ -43,7 +17,7 @@ declare global {
 
 export async function createAdminUser() {
   try {
-    const hashedPassword = await crypto.hash("admin");
+    const hashedPassword = await hashPassword("admin");
     const [existingAdmin] = await db
       .select()
       .from(users)
@@ -96,10 +70,11 @@ export function setupAuth(app: Express) {
           .limit(1);
 
         if (!user) {
+          console.log("User not found:", username);
           return done(null, false, { message: "Incorrect username." });
         }
 
-        const isMatch = await crypto.compare(password, user.password);
+        const isMatch = await verifyPassword(user.password, password);
         console.log("Password comparison result:", isMatch);
 
         if (!isMatch) {

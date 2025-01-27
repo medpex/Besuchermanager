@@ -1,14 +1,13 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { setupAuth, createAdminUser } from "./auth";
+import { setupAuth } from "./auth";
 import { db } from "@db";
-import { visits } from "@db/schema";
+import { visits, users } from "@db/schema";
 import { desc, sql } from "drizzle-orm";
-import { users } from "@db/schema";
+import { hashPassword } from "./utils/crypto";
 
 export function registerRoutes(app: Express): Server {
   setupAuth(app);
-  createAdminUser().catch(console.error);
 
   app.post("/api/visits", async (req, res) => {
     if (!req.isAuthenticated()) {
@@ -188,8 +187,15 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      const newUser = await db.insert(users).values(req.body).returning();
-      res.json(newUser[0]);
+      const hashedPassword = await hashPassword(req.body.password);
+      const newUser = await db.insert(users).values({
+        ...req.body,
+        password: hashedPassword
+      }).returning();
+
+      // Remove password from response
+      const { password, ...userWithoutPassword } = newUser[0];
+      res.json(userWithoutPassword);
     } catch (error) {
       console.error("Failed to create user:", error);
       res.status(500).send("Failed to create user");
