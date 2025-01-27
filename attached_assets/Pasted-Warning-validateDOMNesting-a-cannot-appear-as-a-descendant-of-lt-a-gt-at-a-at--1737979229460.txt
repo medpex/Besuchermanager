@@ -1,0 +1,31 @@
+Warning: validateDOMNesting(...): <a> cannot appear as a descendant of &lt;a&gt;.
+    at a
+    at a
+    at https://4399b705-27bf-476c-ab6f-f87ee4107d84-00-1io18h85q91st.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=2afdbe69:337:18
+    at nav
+    at div
+    at div
+    at div
+    at header
+    at Navigation (https://4399b705-27bf-476c-ab6f-f87ee4107d84-00-1io18h85q91st.kirk.replit.dev/src/components/navigation.tsx:23:28)
+    at div
+    at Router (https://4399b705-27bf-476c-ab6f-f87ee4107d84-00-1io18h85q91st.kirk.replit.dev/src/App.tsx?v=ogqch9JnHOlw2DuWPn7ML:51:31)
+    at QueryClientProvider (https://4399b705-27bf-476c-ab6f-f87ee4107d84-00-1io18h85q91st.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=2afdbe69:2805:3)
+    at App
+at a
+at a
+at https://4399b705-27bf-476c-ab6f-f87ee4107d84-00-1io18h85q91st.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=2afdbe69:337:18
+at nav
+at div
+at div
+at div
+at header
+at Navigation (https://4399b705-27bf-476c-ab6f-f87ee4107d84-00-1io18h85q91st.kirk.replit.dev/src/components/navigation.tsx:23:28)
+at div
+at Router (https://4399b705-27bf-476c-ab6f-f87ee4107d84-00-1io18h85q91st.kirk.replit.dev/src/App.tsx?v=ogqch9JnHOlw2DuWPn7ML:51:31)
+at QueryClientProvider (https://4399b705-27bf-476c-ab6f-f87ee4107d84-00-1io18h85q91st.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=2afdbe69:2805:3)
+at App
+at t.value (https://4399b705-27bf-476c-ab6f-f87ee4107d84-00-1io18h85q91st.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://4399b705-27bf-476c-ab6f-f87ee4107d84-00-1io18h85q91st.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://4399b705-27bf-476c-ab6f-f87ee4107d84-00-1io18h85q91st.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://4399b705-27bf-476c-ab6f-f87ee4107d84-00-1io18h85q91st.kirk.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400

@@ -13,11 +13,15 @@ export default function Navigation() {
             <h1 className="text-2xl font-bold">Stadtwerke Geesthacht</h1>
             <nav className="flex gap-4">
               <Link href="/">
-                <a className="text-gray-600 hover:text-gray-900">Besuchererfassung</a>
+                <span className="text-gray-600 hover:text-gray-900 cursor-pointer">
+                  Besuchererfassung
+                </span>
               </Link>
               {user?.isAdmin && (
                 <Link href="/admin">
-                  <a className="text-gray-600 hover:text-gray-900">Auswertungen</a>
+                  <span className="text-gray-600 hover:text-gray-900 cursor-pointer">
+                    Auswertungen
+                  </span>
                 </Link>
               )}
             </nav>
