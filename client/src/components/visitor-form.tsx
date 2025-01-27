@@ -1,19 +1,39 @@
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useVisits } from "@/hooks/use-visits";
-import { useState } from "react";
 import { Card } from "@/components/ui/card";
+import { useState } from "react";
+import { useVisits } from "@/hooks/use-visits";
 
 const categories = {
-  Media: ["General Consultation", "Contract Completion", "Cancellation", "Customer Management", "Technical/HA", "Billing FM"],
-  Energy: ["General Consultation", "Contract Completion", "Cancellation", "Customer Management", "Technical/HA", "Billing FM"],
-  General: ["E-World", "Complaints", "E-Mobility/PV", "Bike Rental", "Moving Boxes", "Z28", "Shop"]
+  Media: [
+    "Media allgemeine Beratung",
+    "Media Vertragsabschluss", 
+    "Media Kündigung",
+    "Media Kundenverwaltung",
+    "Media Technik/HA",
+    "Media Rechnungen/FM"
+  ],
+  Energie: [
+    "Energie allgemeine Beratung",
+    "Energie Vertragsabschluss",
+    "Energie Kündigung/Abmeldung",
+    "Energie/Kundenverwaltung",
+    "Energie Technik/HA",
+    "Energie Rechnungen/FM"
+  ],
+  Sonstiges: [
+    "E-World",
+    "Beschwerden",
+    "E-Mobilität/PV",
+    "E-Bike Verleih",
+    "Umzugskartons",
+    "FZB",
+    "Shop"
+  ]
 };
 
 type VisitorFormData = {
-  category: keyof typeof categories;
+  category: string;
   subcategory: string;
   officeLocation: string;
 };
@@ -21,21 +41,7 @@ type VisitorFormData = {
 export default function VisitorForm() {
   const { createVisit } = useVisits();
   const [selectedOffice, setSelectedOffice] = useState<string>("");
-
-  const form = useForm<VisitorFormData>({
-    defaultValues: {
-      category: "Media",
-      subcategory: "",
-      officeLocation: "",
-    },
-  });
-
-  const onSubmit = async (data: VisitorFormData) => {
-    await createVisit({ ...data, officeLocation: selectedOffice });
-    form.reset();
-  };
-
-  const selectedCategory = form.watch("category");
+  const [visitorCount, setVisitorCount] = useState(0);
 
   if (!selectedOffice) {
     return (
@@ -57,72 +63,82 @@ export default function VisitorForm() {
     );
   }
 
+  const handleVisit = async (category: string, subcategory: string) => {
+    await createVisit({
+      category,
+      subcategory,
+      officeLocation: selectedOffice,
+    });
+    setVisitorCount(prev => prev + 1);
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Standort: {selectedOffice}</h3>
-        <Button variant="outline" onClick={() => setSelectedOffice("")}>
-          Standort ändern
-        </Button>
+        <div>
+          <h3 className="text-lg font-semibold">Standort: {selectedOffice}</h3>
+          <div className="text-2xl font-bold mt-2">
+            Besucheranzahl: {visitorCount}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setVisitorCount(0)}
+            className="block w-full"
+          >
+            Zähler zurücksetzen
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => setSelectedOffice("")}
+            className="block w-full"
+          >
+            Standort ändern
+          </Button>
+        </div>
       </div>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="category"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Category</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {Object.keys(categories).map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+      <div className="grid gap-6">
+        {/* Media Section - Purple */}
+        <div className="space-y-2">
+          {categories.Media.map((subcategory) => (
+            <Button
+              key={subcategory}
+              onClick={() => handleVisit("Media", subcategory)}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              {subcategory}
+            </Button>
+          ))}
+        </div>
 
-          <FormField
-            control={form.control}
-            name="subcategory"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Subcategory</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select subcategory" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {categories[selectedCategory]?.map((subcategory) => (
-                      <SelectItem key={subcategory} value={subcategory}>
-                        {subcategory}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        {/* Energy Section - Yellow */}
+        <div className="space-y-2">
+          {categories.Energie.map((subcategory) => (
+            <Button
+              key={subcategory}
+              onClick={() => handleVisit("Energie", subcategory)}
+              className="w-full bg-yellow-500 hover:bg-yellow-600 text-black"
+            >
+              {subcategory}
+            </Button>
+          ))}
+        </div>
 
-          <Button type="submit" className="w-full">
-            Besuch erfassen
-          </Button>
-        </form>
-      </Form>
+        {/* General Section - Green */}
+        <div className="space-y-2">
+          {categories.Sonstiges.map((subcategory) => (
+            <Button
+              key={subcategory}
+              onClick={() => handleVisit("Sonstiges", subcategory)}
+              className="w-full bg-green-600 hover:bg-green-700 text-white"
+            >
+              {subcategory}
+            </Button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
