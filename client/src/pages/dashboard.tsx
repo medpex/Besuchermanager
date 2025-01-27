@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import VisitorForm from "@/components/visitor-form";
 import StatsDisplay from "@/components/stats-display";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default function Dashboard() {
   const { user, logout } = useUser();
@@ -13,11 +14,11 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background">
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Visitor Tracking System</h1>
+          <h1 className="text-2xl font-bold">Besuchererfassungssystem</h1>
           <div className="flex items-center gap-4">
-            <span>Welcome, {user?.username}</span>
+            <span>Willkommen, {user?.username}</span>
             <Button variant="outline" onClick={() => logout()}>
-              Logout
+              Abmelden
             </Button>
           </div>
         </div>
@@ -27,7 +28,7 @@ export default function Dashboard() {
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Record New Visit</CardTitle>
+              <CardTitle>Neuen Besuch erfassen</CardTitle>
             </CardHeader>
             <CardContent>
               <VisitorForm />
@@ -36,7 +37,7 @@ export default function Dashboard() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Statistics</CardTitle>
+              <CardTitle>Statistiken</CardTitle>
             </CardHeader>
             <CardContent>
               <StatsDisplay stats={stats} />
@@ -46,32 +47,32 @@ export default function Dashboard() {
 
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle>Recent Visits</CardTitle>
+            <CardTitle>Aktuelle Besuche</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="rounded-md border">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="p-2 text-left">Time</th>
-                    <th className="p-2 text-left">Category</th>
-                    <th className="p-2 text-left">Subcategory</th>
-                    <th className="p-2 text-left">Location</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Zeit</TableHead>
+                    <TableHead>Standort</TableHead>
+                    <TableHead>Kategorie</TableHead>
+                    <TableHead>Unterkategorie</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {visits?.map((visit) => (
-                    <tr key={visit.id} className="border-b">
-                      <td className="p-2">
-                        {new Date(visit.timestamp).toLocaleString()}
-                      </td>
-                      <td className="p-2">{visit.category}</td>
-                      <td className="p-2">{visit.subcategory}</td>
-                      <td className="p-2">{visit.officeLocation}</td>
-                    </tr>
+                    <TableRow key={visit.id}>
+                      <TableCell>
+                        {new Date(visit.timestamp).toLocaleTimeString('de-DE')}
+                      </TableCell>
+                      <TableCell>{visit.officeLocation}</TableCell>
+                      <TableCell>{visit.category}</TableCell>
+                      <TableCell>{visit.subcategory}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </CardContent>
         </Card>
