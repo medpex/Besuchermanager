@@ -47,80 +47,98 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      // Get years for which we have data
-      const yearsResult = await db.execute(sql`
-        SELECT DISTINCT EXTRACT(YEAR FROM timestamp)::integer as year
-        FROM visits
-        ORDER BY year DESC
-        LIMIT 5
-      `);
-      const years = yearsResult.rows.map(row => row.year);
-
       // Weekday stats
       const weekdayStats = await db.execute(sql`
+        WITH visit_years AS (
+          SELECT DISTINCT date_part('year', timestamp)::text as year
+          FROM visits
+          ORDER BY year DESC
+          LIMIT 5
+        )
         SELECT 
-          to_char(timestamp, 'Day') as name,
-          EXTRACT(YEAR FROM timestamp)::integer as year,
+          initcap(to_char(timestamp, 'day')) as name,
+          date_part('year', timestamp)::text as year,
           COUNT(*) as count
         FROM visits 
-        WHERE EXTRACT(YEAR FROM timestamp) = ANY(${years})
+        WHERE date_part('year', timestamp)::text IN (SELECT year FROM visit_years)
         GROUP BY 
-          to_char(timestamp, 'Day'),
-          EXTRACT(YEAR FROM timestamp),
-          EXTRACT(DOW FROM timestamp)
-        ORDER BY EXTRACT(DOW FROM timestamp)
+          initcap(to_char(timestamp, 'day')),
+          date_part('year', timestamp)::text,
+          EXTRACT(isodow FROM timestamp)
+        ORDER BY EXTRACT(isodow FROM timestamp);
       `);
 
       // Time interval stats
       const timeIntervalStats = await db.execute(sql`
+        WITH visit_years AS (
+          SELECT DISTINCT date_part('year', timestamp)::text as year
+          FROM visits
+          ORDER BY year DESC
+          LIMIT 5
+        )
         SELECT 
-          CASE 
-            WHEN EXTRACT(HOUR FROM timestamp) < 10 THEN '08:00-10:00'
-            WHEN EXTRACT(HOUR FROM timestamp) < 12 THEN '10:00-12:00'
-            WHEN EXTRACT(HOUR FROM timestamp) < 14 THEN '12:00-14:00'
-            WHEN EXTRACT(HOUR FROM timestamp) < 16 THEN '14:00-16:00'
-            ELSE '16:00-18:00'
-          END as name,
-          EXTRACT(YEAR FROM timestamp)::integer as year,
+          time_bucket as name,
+          date_part('year', timestamp)::text as year,
           COUNT(*) as count
-        FROM visits 
-        WHERE EXTRACT(YEAR FROM timestamp) = ANY(${years})
-        GROUP BY 1, 2
-        ORDER BY 1
+        FROM (
+          SELECT 
+            timestamp,
+            CASE 
+              WHEN EXTRACT(HOUR FROM timestamp) < 10 THEN '08:00-10:00'
+              WHEN EXTRACT(HOUR FROM timestamp) < 12 THEN '10:00-12:00'
+              WHEN EXTRACT(HOUR FROM timestamp) < 14 THEN '12:00-14:00'
+              WHEN EXTRACT(HOUR FROM timestamp) < 16 THEN '14:00-16:00'
+              ELSE '16:00-18:00'
+            END as time_bucket
+          FROM visits
+        ) subquery
+        WHERE date_part('year', timestamp)::text IN (SELECT year FROM visit_years)
+        GROUP BY time_bucket, date_part('year', timestamp)::text
+        ORDER BY time_bucket;
       `);
 
       // Monthly stats
       const monthlyStats = await db.execute(sql`
+        WITH visit_years AS (
+          SELECT DISTINCT date_part('year', timestamp)::text as year
+          FROM visits
+          ORDER BY year DESC
+          LIMIT 5
+        )
         SELECT 
-          to_char(timestamp, 'Month') as name,
-          EXTRACT(YEAR FROM timestamp)::integer as year,
+          initcap(to_char(timestamp, 'month')) as name,
+          date_part('year', timestamp)::text as year,
           COUNT(*) as count
         FROM visits 
-        WHERE EXTRACT(YEAR FROM timestamp) = ANY(${years})
+        WHERE date_part('year', timestamp)::text IN (SELECT year FROM visit_years)
         GROUP BY 
-          to_char(timestamp, 'Month'),
-          EXTRACT(YEAR FROM timestamp),
-          EXTRACT(MONTH FROM timestamp)
-        ORDER BY EXTRACT(MONTH FROM timestamp)
+          initcap(to_char(timestamp, 'month')),
+          date_part('year', timestamp)::text,
+          EXTRACT(month FROM timestamp)
+        ORDER BY EXTRACT(month FROM timestamp);
       `);
 
-      // Transform the data into the required format
+      // Transform data for frontend
       const transformData = (rows: any[]) => {
-        const dataByName = {};
+        const result = {};
 
+        // First pass: collect all unique years
+        const years = new Set<string>();
+        rows.forEach(row => years.add(row.year));
+
+        // Second pass: initialize data structure
         rows.forEach(row => {
           const name = row.name.trim();
-          if (!dataByName[name]) {
-            dataByName[name] = { name };
-            // Initialize all years with 0
+          if (!result[name]) {
+            result[name] = { name };
             years.forEach(year => {
-              dataByName[name][year] = 0;
+              result[name][year] = 0;
             });
           }
-          dataByName[name][row.year] = parseInt(row.count);
+          result[name][row.year] = parseInt(row.count);
         });
 
-        return Object.values(dataByName);
+        return Object.values(result);
       };
 
       res.json({

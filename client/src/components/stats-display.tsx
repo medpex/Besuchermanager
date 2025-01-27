@@ -16,25 +16,30 @@ const CHART_COLORS = {
 
 export default function StatsDisplay({ data, type }: StatsDisplayProps) {
   if (!data?.length) {
-    return <div>Keine Daten verfügbar</div>;
+    return (
+      <Card className="p-4">
+        <div className="text-center text-gray-500">Keine Daten verfügbar</div>
+      </Card>
+    );
   }
 
   const getTitle = () => {
     switch (type) {
       case 'weekday':
-        return 'Besuche nach Wochentag';
+        return 'Besuche - häufigster Wochentag';
       case 'timeInterval':
-        return 'Besuche nach Uhrzeit';
+        return 'Besuche - Uhrzeit Intervall';
       case 'month':
-        return 'Besuche nach Monat';
+        return 'Besuche - häufigster Monat';
       default:
         return '';
     }
   };
 
+  // Extract years from the first data point, excluding 'name' field
   const years = Object.keys(data[0] || {})
     .filter(key => key !== 'name')
-    .sort((a, b) => parseInt(b) - parseInt(a));
+    .sort((a, b) => b.localeCompare(a)); // Sort years in descending order
 
   return (
     <Card className="p-4">
@@ -52,6 +57,7 @@ export default function StatsDisplay({ data, type }: StatsDisplayProps) {
               dataKey={year}
               name={`Jahr ${year}`}
               fill={CHART_COLORS[year] || '#000000'}
+              stackId="a"
             />
           ))}
         </BarChart>
