@@ -13,14 +13,14 @@ async function hashPassword(password: string) {
 
 async function createAdmin() {
   const hashedPassword = await hashPassword("admin");
-
+  
   try {
     await db.insert(users).values({
       username: "admin",
       password: hashedPassword,
       isAdmin: true
     });
-    console.log("Admin user created successfully with hash:", hashedPassword);
+    console.log("Admin user created successfully");
   } catch (error) {
     console.error("Error creating admin user:", error);
   }
