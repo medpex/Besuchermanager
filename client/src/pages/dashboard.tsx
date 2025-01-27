@@ -25,26 +25,9 @@ export default function Dashboard() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <div className="grid gap-6 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Neuen Besuch erfassen</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <VisitorForm />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Statistiken</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <StatsDisplay stats={stats} />
-            </CardContent>
-          </Card>
+        <div className="max-w-3xl mx-auto">
+          <VisitorForm />
         </div>
-
         <Card className="mt-6">
           <CardHeader>
             <CardTitle>Aktuelle Besuche</CardTitle>
