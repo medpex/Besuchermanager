@@ -5,7 +5,7 @@ import StatsDisplay from "@/components/stats-display";
 import { useVisits } from "@/hooks/use-visits";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUser } from "@/hooks/use-user";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,8 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import type { SelectUser } from "@db/schema";
-import { UserPlus } from "lucide-react";
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 type AdminUser = SelectUser & {
   visitCount?: number;
@@ -60,15 +60,15 @@ export default function AdminPage() {
       }
 
       toast({
-        title: "Success",
-        description: "User created successfully",
+        title: "Erfolg",
+        description: "Benutzer erfolgreich erstellt",
       });
       setIsAddUserOpen(false);
       form.reset();
       refetch();
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "Fehler",
         description: error.message,
         variant: "destructive",
       });
@@ -89,13 +89,13 @@ export default function AdminPage() {
       }
 
       toast({
-        title: "Success",
-        description: `User ${isActive ? "activated" : "deactivated"} successfully`,
+        title: "Erfolg",
+        description: `Benutzer ${isActive ? "aktiviert" : "deaktiviert"}`,
       });
       refetch();
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "Fehler",
         description: error.message,
         variant: "destructive",
       });
@@ -144,8 +144,12 @@ export default function AdminPage() {
               />
 
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row justify-between">
                   <CardTitle>Aktuelle Besuche</CardTitle>
+                  <Button variant="outline" onClick={() => setIsAddUserOpen(true)}>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Neuer Benutzer
+                  </Button>
                 </CardHeader>
                 <CardContent>
                   <div className="rounded-md border">
@@ -187,18 +191,18 @@ export default function AdminPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Username</TableHead>
-                        <TableHead>Role</TableHead>
-                        <TableHead>Visit Count</TableHead>
+                        <TableHead>Benutzername</TableHead>
+                        <TableHead>Rolle</TableHead>
+                        <TableHead>Besuche</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
+                        <TableHead>Aktionen</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {users?.map((user) => (
                         <TableRow key={user.id}>
                           <TableCell>{user.username}</TableCell>
-                          <TableCell>{user.isAdmin ? "Admin" : "User"}</TableCell>
+                          <TableCell>{user.isAdmin ? "Admin" : "Benutzer"}</TableCell>
                           <TableCell>{user.visitCount || 0}</TableCell>
                           <TableCell>
                             <Switch
@@ -208,7 +212,7 @@ export default function AdminPage() {
                           </TableCell>
                           <TableCell>
                             <Button variant="outline" size="sm">
-                              Edit
+                              Bearbeiten
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -218,7 +222,7 @@ export default function AdminPage() {
                   <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Add New User</DialogTitle>
+                        <DialogTitle>Neuen Benutzer anlegen</DialogTitle>
                       </DialogHeader>
                       <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -227,7 +231,7 @@ export default function AdminPage() {
                             name="username"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Username</FormLabel>
+                                <FormLabel>Benutzername</FormLabel>
                                 <FormControl>
                                   <Input {...field} />
                                 </FormControl>
@@ -240,7 +244,7 @@ export default function AdminPage() {
                             name="password"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Password</FormLabel>
+                                <FormLabel>Passwort</FormLabel>
                                 <FormControl>
                                   <Input type="password" {...field} />
                                 </FormControl>
@@ -260,14 +264,14 @@ export default function AdminPage() {
                                       onCheckedChange={field.onChange}
                                     />
                                   </FormControl>
-                                  <FormLabel>Is Admin</FormLabel>
+                                  <FormLabel>Admin-Rechte</FormLabel>
                                 </div>
                                 <FormMessage />
                               </FormItem>
                             )}
                           />
                           <Button type="submit" className="w-full">
-                            Create User
+                            Benutzer erstellen
                           </Button>
                         </form>
                       </Form>
@@ -281,8 +285,4 @@ export default function AdminPage() {
       </main>
     </div>
   );
-}
-
-function useToast() {
-  return { toast: () => {} };
 }
