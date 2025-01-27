@@ -10,6 +10,7 @@ import { db } from "@db";
 import { eq } from "drizzle-orm";
 
 const scryptAsync = promisify(scrypt);
+
 const crypto = {
   hash: async (password: string) => {
     const salt = randomBytes(16).toString("hex");
@@ -17,14 +18,23 @@ const crypto = {
     return `${buf.toString("hex")}.${salt}`;
   },
   compare: async (suppliedPassword: string, storedPassword: string) => {
-    const [hashedPassword, salt] = storedPassword.split(".");
-    const hashedPasswordBuf = Buffer.from(hashedPassword, "hex");
-    const suppliedPasswordBuf = (await scryptAsync(
-      suppliedPassword,
-      salt,
-      64
-    )) as Buffer;
-    return timingSafeEqual(hashedPasswordBuf, suppliedPasswordBuf);
+    try {
+      const [hashedPassword, salt] = storedPassword.split(".");
+      if (!hashedPassword || !salt) {
+        console.error("Invalid stored password format");
+        return false;
+      }
+      const hashedPasswordBuf = Buffer.from(hashedPassword, "hex");
+      const suppliedPasswordBuf = (await scryptAsync(
+        suppliedPassword,
+        salt,
+        64
+      )) as Buffer;
+      return timingSafeEqual(hashedPasswordBuf, suppliedPasswordBuf);
+    } catch (error) {
+      console.error("Error comparing passwords:", error);
+      return false;
+    }
   },
 };
 
@@ -70,12 +80,16 @@ export function setupAuth(app: Express) {
         if (!user) {
           return done(null, false, { message: "Incorrect username." });
         }
+
         const isMatch = await crypto.compare(password, user.password);
+        console.log("Password comparison result:", isMatch);
+
         if (!isMatch) {
           return done(null, false, { message: "Incorrect password." });
         }
         return done(null, user);
       } catch (err) {
+        console.error("Authentication error:", err);
         return done(err);
       }
     })
@@ -98,56 +112,24 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/register", async (req, res, next) => {
+  // Reset admin password
+  app.post("/api/reset-admin", async (req, res) => {
     try {
-      const result = insertUserSchema.safeParse(req.body);
-      if (!result.success) {
-        return res
-          .status(400)
-          .send("Invalid input: " + result.error.issues.map(i => i.message).join(", "));
-      }
-
-      const { username, password } = result.data;
-
-      // Check if user already exists
-      const [existingUser] = await db
-        .select()
-        .from(users)
-        .where(eq(users.username, username))
-        .limit(1);
-
-      if (existingUser) {
-        return res.status(400).send("Username already exists");
-      }
-
-      // Hash the password
-      const hashedPassword = await crypto.hash(password);
-
-      // Create the new user
-      const [newUser] = await db
-        .insert(users)
-        .values({
-          ...result.data,
-          password: hashedPassword,
-        })
-        .returning();
-
-      // Log the user in after registration
-      req.login(newUser, (err) => {
-        if (err) {
-          return next(err);
-        }
-        return res.json({
-          message: "Registration successful",
-          user: { id: newUser.id, username: newUser.username },
-        });
-      });
+      const hashedPassword = await crypto.hash("admin");
+      await db
+        .update(users)
+        .set({ password: hashedPassword })
+        .where(eq(users.username, "admin"));
+      res.json({ message: "Admin password reset successfully" });
     } catch (error) {
-      next(error);
+      console.error("Error resetting admin password:", error);
+      res.status(500).send("Failed to reset admin password");
     }
   });
 
   app.post("/api/login", (req, res, next) => {
+    console.log("Login attempt for username:", req.body.username);
+
     const result = insertUserSchema.safeParse(req.body);
     if (!result.success) {
       return res
@@ -155,8 +137,9 @@ export function setupAuth(app: Express) {
         .send("Invalid input: " + result.error.issues.map(i => i.message).join(", "));
     }
 
-    const cb = (err: any, user: Express.User, info: IVerifyOptions) => {
+    const cb = (err: any, user: Express.User | false, info: IVerifyOptions) => {
       if (err) {
+        console.error("Login error:", err);
         return next(err);
       }
 
@@ -166,12 +149,13 @@ export function setupAuth(app: Express) {
 
       req.logIn(user, (err) => {
         if (err) {
+          console.error("Login error:", err);
           return next(err);
         }
 
         return res.json({
           message: "Login successful",
-          user: { id: user.id, username: user.username },
+          user: { id: user.id, username: user.username, isAdmin: user.isAdmin },
         });
       });
     };
@@ -183,7 +167,6 @@ export function setupAuth(app: Express) {
       if (err) {
         return res.status(500).send("Logout failed");
       }
-
       res.json({ message: "Logout successful" });
     });
   });
@@ -192,7 +175,6 @@ export function setupAuth(app: Express) {
     if (req.isAuthenticated()) {
       return res.json(req.user);
     }
-
     res.status(401).send("Not logged in");
   });
 }
