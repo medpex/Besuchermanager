@@ -7,11 +7,11 @@ type StatsDisplayProps = {
 };
 
 const CHART_COLORS = {
-  '2020': '#8884d8',
-  '2021': '#82ca9d',
-  '2022': '#ffc658',
-  '2023': '#ff7300',
-  '2024': '#0088fe'
+  '2024': '#0088fe',
+  '2023': '#00c49f',
+  '2022': '#ffbb28',
+  '2021': '#ff8042',
+  '2020': '#8884d8'
 };
 
 export default function StatsDisplay({ data, type }: StatsDisplayProps) {
@@ -22,15 +22,19 @@ export default function StatsDisplay({ data, type }: StatsDisplayProps) {
   const getTitle = () => {
     switch (type) {
       case 'weekday':
-        return 'Besuche - häufigster Wochentag';
+        return 'Besuche nach Wochentag';
       case 'timeInterval':
-        return 'Besuche - Uhrzeit Intervall';
+        return 'Besuche nach Uhrzeit';
       case 'month':
-        return 'Besuche - häufigster Monat';
+        return 'Besuche nach Monat';
       default:
         return '';
     }
   };
+
+  const years = Object.keys(data[0] || {})
+    .filter(key => key !== 'name')
+    .sort((a, b) => parseInt(b) - parseInt(a));
 
   return (
     <Card className="p-4">
@@ -42,12 +46,12 @@ export default function StatsDisplay({ data, type }: StatsDisplayProps) {
           <YAxis />
           <Tooltip />
           <Legend />
-          {Object.keys(CHART_COLORS).map((year) => (
+          {years.map((year) => (
             <Bar 
               key={year}
               dataKey={year}
-              name={year}
-              fill={CHART_COLORS[year]}
+              name={`Jahr ${year}`}
+              fill={CHART_COLORS[year] || '#000000'}
             />
           ))}
         </BarChart>

@@ -22,6 +22,7 @@ export function registerRoutes(app: Express): Server {
       }).returning();
       res.json(visit[0]);
     } catch (error) {
+      console.error("Failed to create visit:", error);
       res.status(500).send("Failed to create visit");
     }
   });
@@ -32,9 +33,10 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      const results = await db.select().from(visits).orderBy(desc(visits.timestamp));
+      const results = await db.select().from(visits).orderBy(desc(visits.timestamp)).limit(100);
       res.json(results);
     } catch (error) {
+      console.error("Failed to fetch visits:", error);
       res.status(500).send("Failed to fetch visits");
     }
   });
@@ -45,17 +47,26 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
+      // Get years for which we have data
+      const yearsResult = await db.execute(sql`
+        SELECT DISTINCT EXTRACT(YEAR FROM timestamp)::integer as year
+        FROM visits
+        ORDER BY year DESC
+        LIMIT 5
+      `);
+      const years = yearsResult.rows.map(row => row.year);
+
       // Weekday stats
       const weekdayStats = await db.execute(sql`
         SELECT 
           to_char(timestamp, 'Day') as name,
-          to_char(EXTRACT(YEAR FROM timestamp), '9999') as year,
+          EXTRACT(YEAR FROM timestamp)::integer as year,
           COUNT(*) as count
         FROM visits 
-        WHERE timestamp >= NOW() - INTERVAL '5 years'
+        WHERE EXTRACT(YEAR FROM timestamp) = ANY(${years})
         GROUP BY 
           to_char(timestamp, 'Day'),
-          to_char(EXTRACT(YEAR FROM timestamp), '9999'),
+          EXTRACT(YEAR FROM timestamp),
           EXTRACT(DOW FROM timestamp)
         ORDER BY EXTRACT(DOW FROM timestamp)
       `);
@@ -70,10 +81,10 @@ export function registerRoutes(app: Express): Server {
             WHEN EXTRACT(HOUR FROM timestamp) < 16 THEN '14:00-16:00'
             ELSE '16:00-18:00'
           END as name,
-          to_char(EXTRACT(YEAR FROM timestamp), '9999') as year,
+          EXTRACT(YEAR FROM timestamp)::integer as year,
           COUNT(*) as count
         FROM visits 
-        WHERE timestamp >= NOW() - INTERVAL '5 years'
+        WHERE EXTRACT(YEAR FROM timestamp) = ANY(${years})
         GROUP BY 1, 2
         ORDER BY 1
       `);
@@ -82,26 +93,33 @@ export function registerRoutes(app: Express): Server {
       const monthlyStats = await db.execute(sql`
         SELECT 
           to_char(timestamp, 'Month') as name,
-          to_char(EXTRACT(YEAR FROM timestamp), '9999') as year,
+          EXTRACT(YEAR FROM timestamp)::integer as year,
           COUNT(*) as count
         FROM visits 
-        WHERE timestamp >= NOW() - INTERVAL '5 years'
+        WHERE EXTRACT(YEAR FROM timestamp) = ANY(${years})
         GROUP BY 
           to_char(timestamp, 'Month'),
-          to_char(EXTRACT(YEAR FROM timestamp), '9999'),
+          EXTRACT(YEAR FROM timestamp),
           EXTRACT(MONTH FROM timestamp)
         ORDER BY EXTRACT(MONTH FROM timestamp)
       `);
 
       // Transform the data into the required format
-      const transformData = (rows) => {
+      const transformData = (rows: any[]) => {
         const dataByName = {};
+
         rows.forEach(row => {
-          if (!dataByName[row.name.trim()]) {
-            dataByName[row.name.trim()] = { name: row.name.trim() };
+          const name = row.name.trim();
+          if (!dataByName[name]) {
+            dataByName[name] = { name };
+            // Initialize all years with 0
+            years.forEach(year => {
+              dataByName[name][year] = 0;
+            });
           }
-          dataByName[row.name.trim()][row.year] = parseInt(row.count);
+          dataByName[name][row.year] = parseInt(row.count);
         });
+
         return Object.values(dataByName);
       };
 
@@ -141,6 +159,7 @@ export function registerRoutes(app: Express): Server {
 
       res.json(usersWithVisits);
     } catch (error) {
+      console.error("Failed to fetch users:", error);
       res.status(500).send("Failed to fetch users");
     }
   });
@@ -154,6 +173,7 @@ export function registerRoutes(app: Express): Server {
       const newUser = await db.insert(users).values(req.body).returning();
       res.json(newUser[0]);
     } catch (error) {
+      console.error("Failed to create user:", error);
       res.status(500).send("Failed to create user");
     }
   });
