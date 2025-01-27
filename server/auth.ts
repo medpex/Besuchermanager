@@ -12,12 +12,12 @@ import { eq } from "drizzle-orm";
 const scryptAsync = promisify(scrypt);
 
 const crypto = {
-  hash: async (password: string) => {
+  hash: async (password: string): Promise<string> => {
     const salt = randomBytes(16).toString("hex");
     const buf = (await scryptAsync(password, salt, 64)) as Buffer;
     return `${buf.toString("hex")}.${salt}`;
   },
-  compare: async (suppliedPassword: string, storedPassword: string) => {
+  compare: async (suppliedPassword: string, storedPassword: string): Promise<boolean> => {
     try {
       const [hashedPassword, salt] = storedPassword.split(".");
       if (!hashedPassword || !salt) {
@@ -25,23 +25,41 @@ const crypto = {
         return false;
       }
       const hashedPasswordBuf = Buffer.from(hashedPassword, "hex");
-      const suppliedPasswordBuf = (await scryptAsync(
-        suppliedPassword,
-        salt,
-        64
-      )) as Buffer;
+      const suppliedPasswordBuf = (await scryptAsync(suppliedPassword, salt, 64)) as Buffer;
       return timingSafeEqual(hashedPasswordBuf, suppliedPasswordBuf);
     } catch (error) {
       console.error("Error comparing passwords:", error);
       return false;
     }
-  },
+  }
 };
 
 // extend express user object with our schema
 declare global {
   namespace Express {
     interface User extends SelectUser { }
+  }
+}
+
+export async function createAdminUser() {
+  try {
+    const hashedPassword = await crypto.hash("admin");
+    const [existingAdmin] = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, "admin"))
+      .limit(1);
+
+    if (!existingAdmin) {
+      await db.insert(users).values({
+        username: "admin",
+        password: hashedPassword,
+        isAdmin: true
+      });
+      console.log("Admin user created successfully");
+    }
+  } catch (error) {
+    console.error("Error creating admin user:", error);
   }
 }
 
@@ -109,21 +127,6 @@ export function setupAuth(app: Express) {
       done(null, user);
     } catch (err) {
       done(err);
-    }
-  });
-
-  // Reset admin password
-  app.post("/api/reset-admin", async (req, res) => {
-    try {
-      const hashedPassword = await crypto.hash("admin");
-      await db
-        .update(users)
-        .set({ password: hashedPassword })
-        .where(eq(users.username, "admin"));
-      res.json({ message: "Admin password reset successfully" });
-    } catch (error) {
-      console.error("Error resetting admin password:", error);
-      res.status(500).send("Failed to reset admin password");
     }
   });
 

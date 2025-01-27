@@ -1,12 +1,15 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { setupAuth } from "./auth";
+import { setupAuth, createAdminUser } from "./auth";
 import { db } from "@db";
 import { visits } from "@db/schema";
 import { desc, sql } from "drizzle-orm";
 
 export function registerRoutes(app: Express): Server {
   setupAuth(app);
+
+  // Create admin user on server start
+  createAdminUser().catch(console.error);
 
   // Visit tracking endpoints
   app.post("/api/visits", async (req, res) => {
