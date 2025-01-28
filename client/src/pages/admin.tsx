@@ -5,13 +5,14 @@ import StatsDisplay from "@/components/stats-display";
 import { useVisits } from "@/hooks/use-visits";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUser } from "@/hooks/use-user";
-import { AlertCircle, UserPlus } from "lucide-react";
+import { AlertCircle, ChevronsUpDown, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useForm } from "react-hook-form";
 import type { SelectUser } from "@db/schema";
 import { useState } from "react";
@@ -26,6 +27,7 @@ export default function AdminPage() {
   const { visits } = useVisits();
   const { toast } = useToast();
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const [isVisitsOpen, setIsVisitsOpen] = useState(true);
 
   // Fetch stats data
   const { data: stats } = useQuery({
@@ -144,35 +146,52 @@ export default function AdminPage() {
               />
 
               <Card>
-                <CardHeader>
-                  <CardTitle>Aktuelle Besuche</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Zeit</TableHead>
-                          <TableHead>Standort</TableHead>
-                          <TableHead>Kategorie</TableHead>
-                          <TableHead>Unterkategorie</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {visits?.map((visit) => (
-                          <TableRow key={visit.id}>
-                            <TableCell>
-                              {new Date(visit.timestamp).toLocaleTimeString('de-DE')}
-                            </TableCell>
-                            <TableCell>{visit.officeLocation}</TableCell>
-                            <TableCell>{visit.category}</TableCell>
-                            <TableCell>{visit.subcategory}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                <Collapsible
+                  open={isVisitsOpen}
+                  onOpenChange={setIsVisitsOpen}
+                  className="w-full"
+                >
+                  <div className="flex items-center justify-between px-4">
+                    <CardHeader className="p-0">
+                      <CardTitle>Aktuelle Besuche</CardTitle>
+                    </CardHeader>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="sm" className="w-9 p-0">
+                        <ChevronsUpDown className="h-4 w-4" />
+                        <span className="sr-only">Besuche ein/ausklappen</span>
+                      </Button>
+                    </CollapsibleTrigger>
                   </div>
-                </CardContent>
+
+                  <CollapsibleContent>
+                    <CardContent>
+                      <div className="rounded-md border">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Zeit</TableHead>
+                              <TableHead>Standort</TableHead>
+                              <TableHead>Kategorie</TableHead>
+                              <TableHead>Unterkategorie</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {visits?.map((visit) => (
+                              <TableRow key={visit.id}>
+                                <TableCell>
+                                  {new Date(visit.timestamp).toLocaleTimeString('de-DE')}
+                                </TableCell>
+                                <TableCell>{visit.officeLocation}</TableCell>
+                                <TableCell>{visit.category}</TableCell>
+                                <TableCell>{visit.subcategory}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </CardContent>
+                  </CollapsibleContent>
+                </Collapsible>
               </Card>
             </div>
           </TabsContent>
