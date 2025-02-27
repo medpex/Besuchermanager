@@ -13,7 +13,7 @@ import {
 
 type StatsDisplayProps = {
   data: any[];
-  type: 'weekday' | 'timeInterval' | 'month';
+  type: 'weekday' | 'timeInterval' | 'month' | 'subcategory';
   className?: string;
 };
 
@@ -71,6 +71,8 @@ export default function StatsDisplay({ data, type, className = "" }: StatsDispla
         return 'Besuchsverteilung nach Tageszeit';
       case 'month':
         return 'Besuchsverteilung nach Monat';
+      case 'subcategory':
+        return 'Besuchsverteilung nach Unterkategorien';
       default:
         return '';
     }
@@ -91,6 +93,11 @@ export default function StatsDisplay({ data, type, className = "" }: StatsDispla
   const maxValue = Math.max(...data.map(item => 
     Math.max(...years.map(year => item[year] || 0))
   ));
+
+  // Limit the number of items shown for subcategory to avoid overcrowding
+  const displayData = type === 'subcategory' 
+    ? data.slice(0, 15) // Show only the top 15 subcategories
+    : data;
 
   return (
     <Card className={`overflow-hidden transition-all duration-200 hover:shadow-md ${className}`}>
@@ -116,27 +123,49 @@ export default function StatsDisplay({ data, type, className = "" }: StatsDispla
           </div>
         </div>
 
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={type === 'subcategory' ? 500 : 300}>
           <BarChart 
-            data={data} 
+            data={displayData} 
             margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
             barSize={28}
             barGap={2}
+            layout={type === 'subcategory' ? 'vertical' : 'horizontal'}
           >
             <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-            <XAxis 
-              dataKey="name" 
-              padding={{ left: 10, right: 10 }}
-              tick={{ fontSize: 12 }}
-              tickLine={false}
-            />
-            <YAxis 
-              allowDecimals={false}
-              domain={[0, maxValue * 1.1]}
-              tick={{ fontSize: 12 }}
-              tickLine={false}
-              axisLine={false}
-            />
+            {type === 'subcategory' ? (
+              <>
+                <XAxis 
+                  type="number"
+                  domain={[0, maxValue * 1.1]}
+                  tick={{ fontSize: 12 }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis 
+                  dataKey="name" 
+                  type="category"
+                  width={150}
+                  tick={{ fontSize: 12 }}
+                  tickLine={false}
+                />
+              </>
+            ) : (
+              <>
+                <XAxis 
+                  dataKey="name" 
+                  padding={{ left: 10, right: 10 }}
+                  tick={{ fontSize: 12 }}
+                  tickLine={false}
+                />
+                <YAxis 
+                  allowDecimals={false}
+                  domain={[0, maxValue * 1.1]}
+                  tick={{ fontSize: 12 }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+              </>
+            )}
             <Tooltip content={<CustomTooltip />} />
             <Legend 
               iconType="circle"
@@ -148,7 +177,7 @@ export default function StatsDisplay({ data, type, className = "" }: StatsDispla
                 dataKey={year}
                 name={year}
                 fill={CHART_COLORS[year] || '#000000'}
-                radius={[4, 4, 0, 0]}
+                radius={type === 'subcategory' ? [0, 4, 4, 0] : [4, 4, 0, 0]}
               />
             ))}
           </BarChart>

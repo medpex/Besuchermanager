@@ -117,6 +117,41 @@ export function registerRoutes(app: Express): Server {
         ORDER BY EXTRACT(month FROM timestamp);
       `);
 
+      // Subcategory stats - NEU
+      const subcategoryStats = await db.execute(sql`
+        WITH visit_years AS (
+          SELECT DISTINCT date_part('year', timestamp)::text as year
+          FROM visits
+          ORDER BY year DESC
+          LIMIT 5
+        )
+        SELECT 
+          subcategory as name,
+          date_part('year', timestamp)::text as year,
+          COUNT(*) as count
+        FROM visits 
+        WHERE date_part('year', timestamp)::text IN (SELECT year FROM visit_years)
+        GROUP BY 
+          subcategory,
+          date_part('year', timestamp)::text
+        ORDER BY COUNT(*) DESC;
+      `);
+
+      // Top categories with percentage
+      const topCategoriesStats = await db.execute(sql`
+        WITH total AS (
+          SELECT COUNT(*) as total_count FROM visits
+        )
+        SELECT 
+          category,
+          COUNT(*) as count,
+          ROUND((COUNT(*) * 100.0) / (SELECT total_count FROM total), 2) as percentage
+        FROM visits
+        GROUP BY category
+        ORDER BY count DESC
+        LIMIT 3;
+      `);
+
       // Transform data for frontend
       const transformData = (rows: any[]) => {
         const result = {};
@@ -143,7 +178,9 @@ export function registerRoutes(app: Express): Server {
       res.json({
         weekday: transformData(weekdayStats.rows),
         timeInterval: transformData(timeIntervalStats.rows),
-        month: transformData(monthlyStats.rows)
+        month: transformData(monthlyStats.rows),
+        subcategory: transformData(subcategoryStats.rows),
+        topCategories: topCategoriesStats.rows
       });
     } catch (error) {
       console.error('Stats error:', error);

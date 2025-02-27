@@ -13,7 +13,8 @@ import {
   Clock, 
   Users, 
   MapPin,
-  BarChart
+  BarChart,
+  PieChart
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +52,63 @@ function StatCard({ icon: Icon, title, value, description, className = "" }) {
       </CardContent>
     </Card>
   )
+}
+
+// Komponente für Top Kategorien mit prozentualer Verteilung
+function TopCategoriesCard({ data }) {
+  if (!data || data.length === 0) {
+    return (
+      <Card className="transition-all duration-200 hover:shadow-md">
+        <CardContent className="p-6">
+          <div className="text-center p-4">
+            <p className="text-muted-foreground">Keine Daten verfügbar</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Farbcodes für die Kategorien
+  const colors = {
+    "Media": "#3b82f6", // blue
+    "Energie": "#10b981", // green
+    "Sonstiges": "#f59e0b", // amber
+  };
+
+  return (
+    <Card className="transition-all duration-200 hover:shadow-md">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-sm font-medium text-muted-foreground">Top Kategorien</p>
+          <div className="p-2 bg-primary/10 rounded-full">
+            <PieChart className="h-5 w-5 text-primary" />
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {data.map((category, index) => (
+            <div key={index} className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="font-medium">{category.category}</span>
+                <span className="text-sm font-medium">
+                  {category.count} ({category.percentage}%)
+                </span>
+              </div>
+              <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div 
+                  className="h-full rounded-full" 
+                  style={{ 
+                    width: `${category.percentage}%`, 
+                    backgroundColor: colors[category.category] || "#6366f1"
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function AdminPage() {
@@ -224,12 +282,8 @@ export default function AdminPage() {
                       .map(([loc, count]) => `${loc}: ${count}`)
                       .join(', ')}
                   />
-                  <StatCard 
-                    icon={BarChart} 
-                    title="Häufigste Kategorie" 
-                    value={statistics.topCategory}
-                    description={`${statistics.topCategoryCount} Besuche`}
-                  />
+                  {/* Ersetzt durch die neue TopCategoriesCard Komponente */}
+                  <TopCategoriesCard data={stats?.topCategories} />
                 </div>
               </div>
             )}
@@ -248,6 +302,12 @@ export default function AdminPage() {
                 <StatsDisplay 
                   data={stats?.month || []} 
                   type="month" 
+                />
+                {/* Neue Unterkategorien-Statistik */}
+                <StatsDisplay 
+                  data={stats?.subcategory || []} 
+                  type="subcategory"
+                  className="mt-4" 
                 />
               </div>
             </div>
