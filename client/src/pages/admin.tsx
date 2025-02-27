@@ -32,28 +32,6 @@ type AdminUser = SelectUser & {
   visitCount?: number;
 };
 
-// Statistikkarten für die Übersichtssektion
-function StatCard({ icon: Icon, title, value, description, className = "" }) {
-  return (
-    <Card className={`transition-all duration-200 hover:shadow-md ${className}`}>
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between space-x-4">
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold mt-1">{value}</p>
-            {description && (
-              <p className="text-xs text-muted-foreground mt-1">{description}</p>
-            )}
-          </div>
-          <div className="p-2 bg-primary/10 rounded-full">
-            <Icon className="h-5 w-5 text-primary" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
 // Komponente für Top Kategorien mit prozentualer Verteilung
 function TopCategoriesCard({ data }) {
   if (!data || data.length === 0) {
@@ -100,6 +78,170 @@ function TopCategoriesCard({ data }) {
                   style={{ 
                     width: `${category.percentage}%`, 
                     backgroundColor: colors[category.category] || "#6366f1"
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Komponente für Gesamtbesucher
+function TotalVisitsCard({ value }) {
+  if (!value) {
+    return (
+      <Card className="transition-all duration-200 hover:shadow-md">
+        <CardContent className="p-6">
+          <div className="text-center p-4">
+            <p className="text-muted-foreground">Keine Daten verfügbar</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const maxVisits = 1000; // Max für Progress-Bar
+  const percentage = Math.min((value / maxVisits) * 100, 100);
+
+  return (
+    <Card className="transition-all duration-200 hover:shadow-md">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-sm font-medium text-muted-foreground">Gesamtbesucher</p>
+          <div className="p-2 bg-primary/10 rounded-full">
+            <Users className="h-5 w-5 text-primary" />
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="font-medium">Gesamt</span>
+              <span className="text-2xl font-bold">{value}</span>
+            </div>
+            <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div 
+                className="h-full rounded-full" 
+                style={{ 
+                  width: `${percentage}%`, 
+                  backgroundColor: "#3b82f6"
+                }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">Alle erfassten Besuche</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Komponente für Besuche heute
+function TodayVisitsCard({ value, totalVisits }) {
+  if (!value || !totalVisits) {
+    return (
+      <Card className="transition-all duration-200 hover:shadow-md">
+        <CardContent className="p-6">
+          <div className="text-center p-4">
+            <p className="text-muted-foreground">Keine Daten verfügbar</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const percentage = totalVisits ? (value / totalVisits) * 100 : 0;
+
+  return (
+    <Card className="transition-all duration-200 hover:shadow-md">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-sm font-medium text-muted-foreground">Besuche heute</p>
+          <div className="p-2 bg-primary/10 rounded-full">
+            <Calendar className="h-5 w-5 text-primary" />
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="font-medium">Heute</span>
+              <span className="text-2xl font-bold">{value}</span>
+            </div>
+            <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div 
+                className="h-full rounded-full" 
+                style={{ 
+                  width: `${percentage}%`, 
+                  backgroundColor: "#10b981"
+                }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {percentage.toFixed(1)}% der Gesamtbesuche
+            </p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Komponente für Aktive Standorte
+function LocationsCard({ locations, locationCounts, totalVisits }) {
+  if (!locations || !locations.length || !locationCounts || !totalVisits) {
+    return (
+      <Card className="transition-all duration-200 hover:shadow-md">
+        <CardContent className="p-6">
+          <div className="text-center p-4">
+            <p className="text-muted-foreground">Keine Daten verfügbar</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const locationData = locations.map(location => ({
+    name: location,
+    count: locationCounts[location] || 0,
+    percentage: ((locationCounts[location] || 0) / totalVisits * 100).toFixed(1)
+  })).sort((a, b) => b.count - a.count);
+
+  // Farbcodes für die Standorte
+  const colors = {
+    "Büchen": "#3b82f6", // blue
+    "Schwarzenbek": "#f59e0b", // amber
+    "Geesthacht": "#10b981", // green
+  };
+
+  return (
+    <Card className="transition-all duration-200 hover:shadow-md">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-sm font-medium text-muted-foreground">Aktive Standorte</p>
+          <div className="p-2 bg-primary/10 rounded-full">
+            <MapPin className="h-5 w-5 text-primary" />
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {locationData.map((location, index) => (
+            <div key={index} className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="font-medium">{location.name}</span>
+                <span className="text-sm font-medium">
+                  {location.count} ({location.percentage}%)
+                </span>
+              </div>
+              <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div 
+                  className="h-full rounded-full" 
+                  style={{ 
+                    width: `${location.percentage}%`, 
+                    backgroundColor: colors[location.name] || "#6366f1"
                   }}
                 />
               </div>
@@ -169,6 +311,7 @@ export default function AdminPage() {
       totalVisits: visits.length,
       visitsToday,
       locationCount: locations.length,
+      locations,
       locationCounts,
       topCategory: topCategory ? topCategory[0] : 'Keine Daten',
       topCategoryCount: topCategory ? topCategory[1] : 0
@@ -262,27 +405,16 @@ export default function AdminPage() {
               <div className="mb-8">
                 <h2 className="text-2xl font-bold mb-4">Übersicht</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <StatCard 
-                    icon={Users} 
-                    title="Gesamtbesucher" 
-                    value={statistics.totalVisits}
-                    description="Alle erfassten Besuche"
+                  <TotalVisitsCard value={statistics.totalVisits} />
+                  <TodayVisitsCard 
+                    value={statistics.visitsToday} 
+                    totalVisits={statistics.totalVisits} 
                   />
-                  <StatCard 
-                    icon={Calendar} 
-                    title="Besuche heute" 
-                    value={statistics.visitsToday}
-                    description="Besuche am aktuellen Tag"
+                  <LocationsCard 
+                    locations={statistics.locations}
+                    locationCounts={statistics.locationCounts}
+                    totalVisits={statistics.totalVisits}
                   />
-                  <StatCard 
-                    icon={MapPin} 
-                    title="Aktive Standorte" 
-                    value={statistics.locationCount}
-                    description={Object.entries(statistics.locationCounts)
-                      .map(([loc, count]) => `${loc}: ${count}`)
-                      .join(', ')}
-                  />
-                  {/* Ersetzt durch die neue TopCategoriesCard Komponente */}
                   <TopCategoriesCard data={stats?.topCategories} />
                 </div>
               </div>
