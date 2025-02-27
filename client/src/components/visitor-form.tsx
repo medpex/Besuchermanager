@@ -1,8 +1,9 @@
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useVisits } from "@/hooks/use-visits";
+import { useToast } from "@/hooks/use-toast";
 
 const categories = {
   Media: [
@@ -38,10 +39,73 @@ type VisitorFormData = {
   officeLocation: string;
 };
 
+// Typ für die persistierten Besucherdaten
+type PersistedVisitorData = {
+  date: string;
+  selectedOffice: string;
+  visitorCount: number;
+};
+
 export default function VisitorForm() {
   const { createVisit } = useVisits();
+  const { toast } = useToast();
   const [selectedOffice, setSelectedOffice] = useState<string>("");
   const [visitorCount, setVisitorCount] = useState(0);
+
+  // Beim Initialen Laden die gespeicherten Daten abrufen
+  useEffect(() => {
+    const loadPersistedData = () => {
+      const savedData = localStorage.getItem('visitorFormData');
+      if (savedData) {
+        const parsed = JSON.parse(savedData) as PersistedVisitorData;
+
+        // Überprüfen, ob die gespeicherten Daten vom aktuellen Tag sind
+        const today = new Date().toISOString().split('T')[0];
+
+        if (parsed.date === today) {
+          // Daten vom heutigen Tag verwenden
+          setSelectedOffice(parsed.selectedOffice);
+          setVisitorCount(parsed.visitorCount);
+        } else {
+          // Bei einem neuen Tag den Standort beibehalten, aber Zähler zurücksetzen
+          setSelectedOffice(parsed.selectedOffice);
+          setVisitorCount(0);
+
+          // Aktualisierte Daten speichern
+          persistData(parsed.selectedOffice, 0);
+        }
+      }
+    };
+
+    loadPersistedData();
+  }, []);
+
+  // Funktion zum Speichern der Daten im localStorage
+  const persistData = (office: string, count: number) => {
+    const today = new Date().toISOString().split('T')[0];
+    const dataToSave: PersistedVisitorData = {
+      date: today,
+      selectedOffice: office,
+      visitorCount: count
+    };
+    localStorage.setItem('visitorFormData', JSON.stringify(dataToSave));
+  };
+
+  // Standort setzen und persistieren
+  const handleOfficeSelection = (office: string) => {
+    setSelectedOffice(office);
+    persistData(office, visitorCount);
+  };
+
+  // Zähler zurücksetzen und persistieren
+  const resetCounter = () => {
+    setVisitorCount(0);
+    persistData(selectedOffice, 0);
+    toast({
+      title: "Zähler zurückgesetzt",
+      description: "Die Besucherzählung wurde zurückgesetzt."
+    });
+  };
 
   if (!selectedOffice) {
     return (
@@ -51,7 +115,7 @@ export default function VisitorForm() {
           {["Geesthacht", "Büchen", "Schwarzenbek"].map((office) => (
             <Button
               key={office}
-              onClick={() => setSelectedOffice(office)}
+              onClick={() => handleOfficeSelection(office)}
               className="h-24 text-lg"
               variant="outline"
             >
@@ -69,7 +133,9 @@ export default function VisitorForm() {
       subcategory,
       officeLocation: selectedOffice,
     });
-    setVisitorCount(prev => prev + 1);
+    const newCount = visitorCount + 1;
+    setVisitorCount(newCount);
+    persistData(selectedOffice, newCount);
   };
 
   return (
@@ -84,14 +150,14 @@ export default function VisitorForm() {
         <div className="space-y-2">
           <Button 
             variant="outline" 
-            onClick={() => setVisitorCount(0)}
+            onClick={resetCounter}
             className="block w-full"
           >
             Zähler zurücksetzen
           </Button>
           <Button 
             variant="outline" 
-            onClick={() => setSelectedOffice("")}
+            onClick={() => handleOfficeSelection("")}
             className="block w-full"
           >
             Standort ändern
