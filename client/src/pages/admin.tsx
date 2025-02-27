@@ -1,11 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import StatsDisplay from "@/components/stats-display";
 import { useVisits } from "@/hooks/use-visits";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUser } from "@/hooks/use-user";
-import { AlertCircle, ChevronsUpDown, UserPlus } from "lucide-react";
+import { 
+  AlertCircle, 
+  ChevronsUpDown, 
+  UserPlus, 
+  Calendar, 
+  Clock, 
+  Users, 
+  MapPin,
+  BarChart
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,12 +24,34 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useForm } from "react-hook-form";
 import type { SelectUser } from "@db/schema";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 type AdminUser = SelectUser & {
   visitCount?: number;
 };
+
+// Statistikkarten für die Übersichtssektion
+function StatCard({ icon: Icon, title, value, description, className = "" }) {
+  return (
+    <Card className={`transition-all duration-200 hover:shadow-md ${className}`}>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between space-x-4">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <p className="text-2xl font-bold mt-1">{value}</p>
+            {description && (
+              <p className="text-xs text-muted-foreground mt-1">{description}</p>
+            )}
+          </div>
+          <div className="p-2 bg-primary/10 rounded-full">
+            <Icon className="h-5 w-5 text-primary" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 export default function AdminPage() {
   const { user } = useUser();
@@ -47,6 +78,44 @@ export default function AdminPage() {
       isAdmin: false,
     },
   });
+
+  // Berechnung wichtiger Statistiken für die Übersicht
+  const statistics = useMemo(() => {
+    if (!visits || !stats) return null;
+
+    // Eindeutige Standorte zählen
+    const locations = [...new Set(visits.map(v => v.officeLocation))];
+
+    // Besuche heute zählen
+    const today = new Date().toISOString().split('T')[0];
+    const visitsToday = visits.filter(v => 
+      new Date(v.timestamp).toISOString().split('T')[0] === today
+    ).length;
+
+    // Besuche nach Standort gruppieren
+    const locationCounts = locations.reduce((acc, loc) => {
+      acc[loc] = visits.filter(v => v.officeLocation === loc).length;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Häufigste Kategorie ermitteln
+    const categoryCount = visits.reduce((acc, visit) => {
+      acc[visit.category] = (acc[visit.category] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const topCategory = Object.entries(categoryCount)
+      .sort((a, b) => b[1] - a[1])[0];
+
+    return {
+      totalVisits: visits.length,
+      visitsToday,
+      locationCount: locations.length,
+      locationCounts,
+      topCategory: topCategory ? topCategory[0] : 'Keine Daten',
+      topCategoryCount: topCategory ? topCategory[1] : 0
+    };
+  }, [visits, stats]);
 
   const onSubmit = async (data: any) => {
     try {
@@ -123,121 +192,162 @@ export default function AdminPage() {
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-8">
         <Tabs defaultValue="visits">
-          <TabsList className="mb-4">
-            <TabsTrigger value="visits">Besucherstatistiken</TabsTrigger>
+          <TabsList className="mb-6">
+            <TabsTrigger value="visits" className="text-base">Besucherstatistiken</TabsTrigger>
             {user.isAdmin && (
-              <TabsTrigger value="users">Benutzerverwaltung</TabsTrigger>
+              <TabsTrigger value="users" className="text-base">Benutzerverwaltung</TabsTrigger>
             )}
           </TabsList>
 
           <TabsContent value="visits">
-            <div className="grid gap-6">
-              <StatsDisplay 
-                data={stats?.weekday || []} 
-                type="weekday" 
-              />
-              <StatsDisplay 
-                data={stats?.timeInterval || []} 
-                type="timeInterval" 
-              />
-              <StatsDisplay 
-                data={stats?.month || []} 
-                type="month" 
-              />
+            {statistics && (
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold mb-4">Übersicht</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <StatCard 
+                    icon={Users} 
+                    title="Gesamtbesucher" 
+                    value={statistics.totalVisits}
+                    description="Alle erfassten Besuche"
+                  />
+                  <StatCard 
+                    icon={Calendar} 
+                    title="Besuche heute" 
+                    value={statistics.visitsToday}
+                    description="Besuche am aktuellen Tag"
+                  />
+                  <StatCard 
+                    icon={MapPin} 
+                    title="Aktive Standorte" 
+                    value={statistics.locationCount}
+                    description={Object.entries(statistics.locationCounts)
+                      .map(([loc, count]) => `${loc}: ${count}`)
+                      .join(', ')}
+                  />
+                  <StatCard 
+                    icon={BarChart} 
+                    title="Häufigste Kategorie" 
+                    value={statistics.topCategory}
+                    description={`${statistics.topCategoryCount} Besuche`}
+                  />
+                </div>
+              </div>
+            )}
 
-              <Card>
-                <Collapsible
-                  open={isVisitsOpen}
-                  onOpenChange={setIsVisitsOpen}
-                  className="w-full"
-                >
-                  <div className="flex items-center justify-between px-4">
-                    <CardHeader className="p-0">
-                      <CardTitle>Aktuelle Besuche</CardTitle>
-                    </CardHeader>
-                    <CollapsibleTrigger asChild>
-                      <Button variant="ghost" size="sm" className="w-9 p-0">
-                        <ChevronsUpDown className="h-4 w-4" />
-                        <span className="sr-only">Besuche ein/ausklappen</span>
-                      </Button>
-                    </CollapsibleTrigger>
-                  </div>
-
-                  <CollapsibleContent>
-                    <CardContent>
-                      <div className="rounded-md border">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Zeit</TableHead>
-                              <TableHead>Standort</TableHead>
-                              <TableHead>Kategorie</TableHead>
-                              <TableHead>Unterkategorie</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {visits?.map((visit) => (
-                              <TableRow key={visit.id}>
-                                <TableCell>
-                                  {new Date(visit.timestamp).toLocaleTimeString('de-DE')}
-                                </TableCell>
-                                <TableCell>{visit.officeLocation}</TableCell>
-                                <TableCell>{visit.category}</TableCell>
-                                <TableCell>{visit.subcategory}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </CardContent>
-                  </CollapsibleContent>
-                </Collapsible>
-              </Card>
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold mb-4">Detaillierte Statistiken</h2>
+              <div className="grid gap-6">
+                <StatsDisplay 
+                  data={stats?.weekday || []} 
+                  type="weekday" 
+                />
+                <StatsDisplay 
+                  data={stats?.timeInterval || []} 
+                  type="timeInterval" 
+                />
+                <StatsDisplay 
+                  data={stats?.month || []} 
+                  type="month" 
+                />
+              </div>
             </div>
+
+            <Card className="mb-6 overflow-hidden">
+              <Collapsible
+                open={isVisitsOpen}
+                onOpenChange={setIsVisitsOpen}
+                className="w-full"
+              >
+                <div className="flex items-center justify-between px-6 py-4 border-b">
+                  <h3 className="text-lg font-semibold">Aktuelle Besuche</h3>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="w-8 h-8 p-0 rounded-full">
+                      <ChevronsUpDown className="h-4 w-4" />
+                      <span className="sr-only">Besuche ein/ausklappen</span>
+                    </Button>
+                  </CollapsibleTrigger>
+                </div>
+
+                <CollapsibleContent>
+                  <div className="p-6">
+                    <div className="rounded-md border overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Zeit</TableHead>
+                            <TableHead>Standort</TableHead>
+                            <TableHead>Kategorie</TableHead>
+                            <TableHead>Unterkategorie</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {visits?.map((visit) => (
+                            <TableRow key={visit.id}>
+                              <TableCell>
+                                {new Date(visit.timestamp).toLocaleTimeString('de-DE')}
+                              </TableCell>
+                              <TableCell>{visit.officeLocation}</TableCell>
+                              <TableCell>{visit.category}</TableCell>
+                              <TableCell>{visit.subcategory}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            </Card>
           </TabsContent>
 
           {user.isAdmin && (
             <TabsContent value="users">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Benutzerverwaltung</CardTitle>
+                  <div>
+                    <CardTitle className="text-xl">Benutzerverwaltung</CardTitle>
+                    <CardDescription>Verwalten Sie die Benutzerkonten im System</CardDescription>
+                  </div>
                   <Button onClick={() => setIsAddUserOpen(true)}>
                     <UserPlus className="h-4 w-4 mr-2" />
                     Neuer Benutzer
                   </Button>
                 </CardHeader>
                 <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Benutzername</TableHead>
-                        <TableHead>Rolle</TableHead>
-                        <TableHead>Besuche</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Aktionen</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {users?.map((user) => (
-                        <TableRow key={user.id}>
-                          <TableCell>{user.username}</TableCell>
-                          <TableCell>{user.isAdmin ? "Admin" : "Benutzer"}</TableCell>
-                          <TableCell>{user.visitCount || 0}</TableCell>
-                          <TableCell>
-                            <Switch
-                              checked={user.isAdmin}
-                              onCheckedChange={(checked) => toggleUserStatus(user.id, checked)}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Button variant="outline" size="sm">
-                              Bearbeiten
-                            </Button>
-                          </TableCell>
+                  <div className="rounded-md border overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Benutzername</TableHead>
+                          <TableHead>Rolle</TableHead>
+                          <TableHead>Besuche</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Aktionen</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {users?.map((user) => (
+                          <TableRow key={user.id}>
+                            <TableCell className="font-medium">{user.username}</TableCell>
+                            <TableCell>{user.isAdmin ? "Admin" : "Benutzer"}</TableCell>
+                            <TableCell>{user.visitCount || 0}</TableCell>
+                            <TableCell>
+                              <Switch
+                                checked={user.isAdmin}
+                                onCheckedChange={(checked) => toggleUserStatus(user.id, checked)}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Button variant="outline" size="sm">
+                                Bearbeiten
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
                   <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
                     <DialogContent>
                       <DialogHeader>
