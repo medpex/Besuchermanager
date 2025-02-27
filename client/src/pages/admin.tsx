@@ -14,7 +14,8 @@ import {
   Users, 
   MapPin,
   BarChart,
-  PieChart
+  PieChart,
+  RefreshCcw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +26,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useForm } from "react-hook-form";
 import type { SelectUser } from "@db/schema";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 type AdminUser = SelectUser & {
@@ -140,7 +141,7 @@ function TotalVisitsCard({ value }) {
 }
 
 // Komponente für Besuche heute
-function TodayVisitsCard({ value, totalVisits }) {
+function TodayVisitsCard({ value, totalVisits, onReset }) {
   if (!value || !totalVisits) {
     return (
       <Card className="transition-all duration-200 hover:shadow-md">
@@ -160,8 +161,20 @@ function TodayVisitsCard({ value, totalVisits }) {
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-4">
           <p className="text-sm font-medium text-muted-foreground">Besuche heute</p>
-          <div className="p-2 bg-primary/10 rounded-full">
-            <Calendar className="h-5 w-5 text-primary" />
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8 rounded-full"
+              onClick={onReset}
+              title="Zähler zurücksetzen"
+            >
+              <RefreshCcw className="h-4 w-4 text-muted-foreground" />
+              <span className="sr-only">Zähler zurücksetzen</span>
+            </Button>
+            <div className="p-2 bg-primary/10 rounded-full">
+              <Calendar className="h-5 w-5 text-primary" />
+            </div>
           </div>
         </div>
 
@@ -253,12 +266,22 @@ function LocationsCard({ locations, locationCounts, totalVisits }) {
   );
 }
 
+// Typ für die persistierten Statistikdaten
+type PersistedStats = {
+  date: string;
+  visitsByLocation: Record<string, number>;
+  totalVisitsToday: number;
+};
+
 export default function AdminPage() {
   const { user } = useUser();
   const { visits } = useVisits();
   const { toast } = useToast();
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isVisitsOpen, setIsVisitsOpen] = useState(true);
+
+  // State für persistierte Statistiken
+  const [persistedStats, setPersistedStats] = useState<PersistedStats | null>(null);
 
   // Fetch stats data
   const { data: stats } = useQuery({
@@ -279,6 +302,47 @@ export default function AdminPage() {
     },
   });
 
+  // Bei Seitenstart persitierte Daten laden
+  useEffect(() => {
+    const loadPersistedStats = () => {
+      const savedStats = localStorage.getItem('visitorStats');
+      if (savedStats) {
+        const parsed = JSON.parse(savedStats) as PersistedStats;
+
+        // Überprüfen, ob die gespeicherten Daten vom aktuellen Tag sind
+        const today = new Date().toISOString().split('T')[0];
+        if (parsed.date === today) {
+          setPersistedStats(parsed);
+        } else {
+          // Wenn die Daten nicht vom aktuellen Tag sind, zurücksetzen
+          resetStats();
+        }
+      } else {
+        // Wenn keine Daten vorhanden sind, initialisieren
+        resetStats();
+      }
+    };
+
+    loadPersistedStats();
+  }, []);
+
+  // Zurücksetzen der Statistiken
+  const resetStats = () => {
+    const today = new Date().toISOString().split('T')[0];
+    const newStats: PersistedStats = {
+      date: today,
+      visitsByLocation: {},
+      totalVisitsToday: 0
+    };
+    setPersistedStats(newStats);
+    localStorage.setItem('visitorStats', JSON.stringify(newStats));
+
+    toast({
+      title: "Statistiken zurückgesetzt",
+      description: "Die Tageszählung wurde zurückgesetzt."
+    });
+  };
+
   // Berechnung wichtiger Statistiken für die Übersicht
   const statistics = useMemo(() => {
     if (!visits || !stats) return null;
@@ -286,17 +350,41 @@ export default function AdminPage() {
     // Eindeutige Standorte zählen
     const locations = [...new Set(visits.map(v => v.officeLocation))];
 
-    // Besuche heute zählen
+    // Heutiges Datum
     const today = new Date().toISOString().split('T')[0];
-    const visitsToday = visits.filter(v => 
-      new Date(v.timestamp).toISOString().split('T')[0] === today
-    ).length;
 
-    // Besuche nach Standort gruppieren
-    const locationCounts = locations.reduce((acc, loc) => {
-      acc[loc] = visits.filter(v => v.officeLocation === loc).length;
-      return acc;
-    }, {} as Record<string, number>);
+    // Falls persistierte Daten existieren und vom heutigen Tag sind, verwenden wir diese
+    let visitsToday = 0;
+    let locationCounts: Record<string, number> = {};
+
+    if (persistedStats && persistedStats.date === today) {
+      // Persistierte Daten verwenden
+      visitsToday = persistedStats.totalVisitsToday;
+      locationCounts = {...persistedStats.visitsByLocation};
+    } else {
+      // Neue Daten berechnen
+      visitsToday = visits.filter(v => 
+        new Date(v.timestamp).toISOString().split('T')[0] === today
+      ).length;
+
+      // Besuche nach Standort gruppieren
+      locationCounts = locations.reduce((acc, loc) => {
+        acc[loc] = visits.filter(v => 
+          v.officeLocation === loc && 
+          new Date(v.timestamp).toISOString().split('T')[0] === today
+        ).length;
+        return acc;
+      }, {} as Record<string, number>);
+
+      // Daten persistieren
+      const newStats: PersistedStats = {
+        date: today,
+        visitsByLocation: locationCounts,
+        totalVisitsToday: visitsToday
+      };
+      setPersistedStats(newStats);
+      localStorage.setItem('visitorStats', JSON.stringify(newStats));
+    }
 
     // Häufigste Kategorie ermitteln
     const categoryCount = visits.reduce((acc, visit) => {
@@ -316,7 +404,45 @@ export default function AdminPage() {
       topCategory: topCategory ? topCategory[0] : 'Keine Daten',
       topCategoryCount: topCategory ? topCategory[1] : 0
     };
-  }, [visits, stats]);
+  }, [visits, stats, persistedStats]);
+
+  // Wenn sich die Besuche ändern (ein neuer Besuch wurde hinzugefügt),
+  // aktualisieren wir die persistierten Daten
+  useEffect(() => {
+    if (!visits || !statistics || !persistedStats) return;
+
+    const today = new Date().toISOString().split('T')[0];
+
+    // Nur aktualisieren, wenn es sich um den aktuellen Tag handelt
+    if (persistedStats.date !== today) return;
+
+    // Neue Besuche für heute zählen
+    const newVisitsToday = visits.filter(v => 
+      new Date(v.timestamp).toISOString().split('T')[0] === today
+    ).length;
+
+    // Wenn keine Änderung vorliegt, nicht aktualisieren
+    if (newVisitsToday === persistedStats.totalVisitsToday) return;
+
+    // Besuche nach Standort gruppieren
+    const newLocationCounts = statistics.locations.reduce((acc, loc) => {
+      acc[loc] = visits.filter(v => 
+        v.officeLocation === loc && 
+        new Date(v.timestamp).toISOString().split('T')[0] === today
+      ).length;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Daten aktualisieren
+    const updatedStats: PersistedStats = {
+      date: today,
+      visitsByLocation: newLocationCounts,
+      totalVisitsToday: newVisitsToday
+    };
+
+    setPersistedStats(updatedStats);
+    localStorage.setItem('visitorStats', JSON.stringify(updatedStats));
+  }, [visits, statistics, persistedStats]);
 
   const onSubmit = async (data: any) => {
     try {
@@ -409,6 +535,7 @@ export default function AdminPage() {
                   <TodayVisitsCard 
                     value={statistics.visitsToday} 
                     totalVisits={statistics.totalVisits} 
+                    onReset={resetStats}
                   />
                   <LocationsCard 
                     locations={statistics.locations}
