@@ -51,6 +51,38 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>)
   return null;
 };
 
+// Funktion zum Abkürzen langer Kategorienamen
+const shortenName = (name: string, maxLength = 20): string => {
+  if (!name) return '';
+
+  // Bekannte Abkürzungen
+  const abbreviations: Record<string, string> = {
+    "Media allgemeine Beratung": "Media allg. Beratung",
+    "Energie allgemeine Beratung": "Energie allg. Beratung",
+    "Media Vertragsabschluss": "Media Vertrag",
+    "Energie Vertragsabschluss": "Energie Vertrag",
+    "Media Rechnungen/FM": "Media Rech./FM",
+    "Energie Rechnungen/FM": "Energie Rech./FM",
+    "Energie/Kundenverwaltung": "Energie/Kundenv.",
+    "Media Kundenverwaltung": "Media Kundenv.",
+    "Energie Technik/HA": "Energie Technik",
+    "Media Technik/HA": "Media Technik",
+    "E-Mobilität/PV": "E-Mobilität"
+  };
+
+  // Verwende Abkürzung, falls vorhanden
+  if (abbreviations[name]) {
+    return abbreviations[name];
+  }
+
+  // Kürze ansonsten den Text ab
+  if (name.length > maxLength) {
+    return name.substring(0, maxLength - 3) + '...';
+  }
+
+  return name;
+};
+
 export default function StatsDisplay({ data, type, className = "" }: StatsDisplayProps) {
   if (!data?.length) {
     return (
@@ -96,7 +128,10 @@ export default function StatsDisplay({ data, type, className = "" }: StatsDispla
 
   // Limit the number of items shown for subcategory to avoid overcrowding
   const displayData = type === 'subcategory' 
-    ? data.slice(0, 15) // Show only the top 15 subcategories
+    ? data.slice(0, 12).map(item => ({  // Reduzieren auf 12 Unterkategorien
+        ...item,
+        name: shortenName(item.name)    // Namen abkürzen
+      }))
     : data;
 
   return (
@@ -123,12 +158,12 @@ export default function StatsDisplay({ data, type, className = "" }: StatsDispla
           </div>
         </div>
 
-        <ResponsiveContainer width="100%" height={type === 'subcategory' ? 500 : 300}>
+        <ResponsiveContainer width="100%" height={type === 'subcategory' ? 400 : 300}>
           <BarChart 
             data={displayData} 
             margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
-            barSize={28}
-            barGap={2}
+            barSize={type === 'subcategory' ? 18 : 28}  // Dünnere Balken für Unterkategorien
+            barGap={type === 'subcategory' ? 4 : 2}
             layout={type === 'subcategory' ? 'vertical' : 'horizontal'}
           >
             <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
@@ -144,7 +179,7 @@ export default function StatsDisplay({ data, type, className = "" }: StatsDispla
                 <YAxis 
                   dataKey="name" 
                   type="category"
-                  width={150}
+                  width={120}  // Reduzierte Breite für Beschriftungen
                   tick={{ fontSize: 12 }}
                   tickLine={false}
                 />
