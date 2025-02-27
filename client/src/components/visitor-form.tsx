@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { useVisits } from "@/hooks/use-visits";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/hooks/use-user";
 
 const categories = {
   Media: [
@@ -49,13 +50,19 @@ type PersistedVisitorData = {
 export default function VisitorForm() {
   const { createVisit } = useVisits();
   const { toast } = useToast();
+  const { user } = useUser(); // Hier den aktuellen Benutzer abrufen
   const [selectedOffice, setSelectedOffice] = useState<string>("");
   const [visitorCount, setVisitorCount] = useState(0);
 
+  // Eindeutigen Schlüssel für jeden Benutzer erstellen
+  const storageKey = `visitorFormData_${user?.id || 'default'}`;
+
   // Beim Initialen Laden die gespeicherten Daten abrufen
   useEffect(() => {
+    if (!user) return; // Nur wenn Benutzer eingeloggt ist
+
     const loadPersistedData = () => {
-      const savedData = localStorage.getItem('visitorFormData');
+      const savedData = localStorage.getItem(storageKey);
       if (savedData) {
         const parsed = JSON.parse(savedData) as PersistedVisitorData;
 
@@ -78,17 +85,19 @@ export default function VisitorForm() {
     };
 
     loadPersistedData();
-  }, []);
+  }, [user, storageKey]); // Abhängigkeit von user und storageKey
 
   // Funktion zum Speichern der Daten im localStorage
   const persistData = (office: string, count: number) => {
+    if (!user) return; // Nur wenn Benutzer eingeloggt ist
+
     const today = new Date().toISOString().split('T')[0];
     const dataToSave: PersistedVisitorData = {
       date: today,
       selectedOffice: office,
       visitorCount: count
     };
-    localStorage.setItem('visitorFormData', JSON.stringify(dataToSave));
+    localStorage.setItem(storageKey, JSON.stringify(dataToSave));
   };
 
   // Standort setzen und persistieren

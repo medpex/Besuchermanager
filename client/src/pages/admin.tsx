@@ -280,6 +280,9 @@ export default function AdminPage() {
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isVisitsOpen, setIsVisitsOpen] = useState(true);
 
+  // Eindeutigen Schlüssel für jeden Benutzer erstellen
+  const statsStorageKey = `visitorStats_${user?.id || 'default'}`;
+
   // State für persistierte Statistiken
   const [persistedStats, setPersistedStats] = useState<PersistedStats | null>(null);
 
@@ -304,8 +307,10 @@ export default function AdminPage() {
 
   // Bei Seitenstart persitierte Daten laden
   useEffect(() => {
+    if (!user) return; // Nur wenn ein Benutzer eingeloggt ist
+
     const loadPersistedStats = () => {
-      const savedStats = localStorage.getItem('visitorStats');
+      const savedStats = localStorage.getItem(statsStorageKey);
       if (savedStats) {
         const parsed = JSON.parse(savedStats) as PersistedStats;
 
@@ -324,10 +329,12 @@ export default function AdminPage() {
     };
 
     loadPersistedStats();
-  }, []);
+  }, [user, statsStorageKey]);
 
   // Zurücksetzen der Statistiken
   const resetStats = () => {
+    if (!user) return; // Nur wenn ein Benutzer eingeloggt ist
+
     const today = new Date().toISOString().split('T')[0];
     const newStats: PersistedStats = {
       date: today,
@@ -335,7 +342,7 @@ export default function AdminPage() {
       totalVisitsToday: 0
     };
     setPersistedStats(newStats);
-    localStorage.setItem('visitorStats', JSON.stringify(newStats));
+    localStorage.setItem(statsStorageKey, JSON.stringify(newStats));
 
     toast({
       title: "Statistiken zurückgesetzt",
@@ -383,7 +390,7 @@ export default function AdminPage() {
         totalVisitsToday: visitsToday
       };
       setPersistedStats(newStats);
-      localStorage.setItem('visitorStats', JSON.stringify(newStats));
+      localStorage.setItem(statsStorageKey, JSON.stringify(newStats));
     }
 
     // Häufigste Kategorie ermitteln
@@ -404,12 +411,12 @@ export default function AdminPage() {
       topCategory: topCategory ? topCategory[0] : 'Keine Daten',
       topCategoryCount: topCategory ? topCategory[1] : 0
     };
-  }, [visits, stats, persistedStats]);
+  }, [visits, stats, persistedStats, statsStorageKey, user]);
 
   // Wenn sich die Besuche ändern (ein neuer Besuch wurde hinzugefügt),
   // aktualisieren wir die persistierten Daten
   useEffect(() => {
-    if (!visits || !statistics || !persistedStats) return;
+    if (!visits || !statistics || !persistedStats || !user) return;
 
     const today = new Date().toISOString().split('T')[0];
 
@@ -441,8 +448,8 @@ export default function AdminPage() {
     };
 
     setPersistedStats(updatedStats);
-    localStorage.setItem('visitorStats', JSON.stringify(updatedStats));
-  }, [visits, statistics, persistedStats]);
+    localStorage.setItem(statsStorageKey, JSON.stringify(updatedStats));
+  }, [visits, statistics, persistedStats, user, statsStorageKey]);
 
   const onSubmit = async (data: any) => {
     try {
