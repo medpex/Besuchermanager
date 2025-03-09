@@ -3,9 +3,9 @@
  * Erstellt die Datenbankstruktur und fügt Beispieldaten ein
  */
 
-const { db } = require("./db");
-const { users, visits } = require("./db/schema");
-const { hashPassword } = require("./server/utils/crypto");
+import { db } from "./db/index.js";
+import { users, visits } from "./db/schema.js";
+import { hashPassword } from "./server/utils/crypto.js";
 
 async function initializeDatabase() {
   try {

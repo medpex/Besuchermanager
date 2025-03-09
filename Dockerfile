@@ -1,21 +1,19 @@
-# Basis-Image
-FROM node:20-slim
+FROM node:20-alpine
 
-# Arbeitsverzeichnis erstellen
 WORKDIR /app
 
-# Dependencies installieren
+# Installiere Dependencies
 COPY package*.json ./
 RUN npm install
 
-# Anwendungsdateien kopieren
+# Kopiere den Rest des Projekts
 COPY . .
 
-# Build der Anwendung
+# Baue das Projekt
 RUN npm run build
 
-# Port freigeben
+# Exponiere den Port
 EXPOSE 5000
 
-# Anwendung starten
-CMD ["npm", "run", "dev"]
+# Starte die Anwendung
+CMD ["npm", "start"]

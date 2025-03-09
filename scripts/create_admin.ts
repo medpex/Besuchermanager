@@ -12,9 +12,19 @@ async function hashPassword(password: string) {
 }
 
 async function createAdmin() {
-  const hashedPassword = await hashPassword("admin");
+  const hashedPassword = await hashPassword("admin123");
   
   try {
+    // Prüfe zuerst, ob der Admin bereits existiert
+    const existingAdmin = await db.query.users.findFirst({
+      where: (users, { eq }) => eq(users.username, "admin")
+    });
+    
+    if (existingAdmin) {
+      console.log("Admin user already exists");
+      return;
+    }
+    
     await db.insert(users).values({
       username: "admin",
       password: hashedPassword,

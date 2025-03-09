@@ -3,28 +3,36 @@ version: '3.8'
 services:
   app:
     build: .
+    container_name: besuchererfassung-app
+    restart: always
     ports:
       - "5000:5000"
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=postgres://visitor_app:visitor_password@db:5432/visitor_tracking
-      - SESSION_SECRET=${SESSION_SECRET}
     depends_on:
       - db
-    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/besucherdb
+    networks:
+      - app-network
 
   db:
-    image: postgres:14-alpine
-    environment:
-      - POSTGRES_USER=visitor_app
-      - POSTGRES_PASSWORD=visitor_password
-      - POSTGRES_DB=visitor_tracking
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./db-init.js:/docker-entrypoint-initdb.d/db-init.js
+    image: postgres:16-alpine
+    container_name: besuchererfassung-db
+    restart: always
     ports:
       - "5432:5432"
-    restart: unless-stopped
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=besucherdb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
   postgres_data:
