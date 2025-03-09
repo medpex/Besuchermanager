@@ -9,9 +9,17 @@ services:
       - "5000:5000"
     depends_on:
       - db
+    env_file:
+      - .docker.env
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/besucherdb
+      - PGHOST=db
+      - PGUSER=postgres
+      - PGPASSWORD=postgres
+      - PGDATABASE=besucherdb
+      - PGPORT=5432
+      - SESSION_SECRET=D6h23Qm8L7pR5Zt9X3Nv1Kw4Js0Hg2Fd
     networks:
       - app-network
 
