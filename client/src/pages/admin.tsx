@@ -597,6 +597,7 @@ export default function AdminPage() {
         <TabsList className="w-full md:w-auto mb-4">
           <TabsTrigger value="statistics">Statistiken</TabsTrigger>
           <TabsTrigger value="tables">Tabellarische Auswertung</TabsTrigger>
+          <TabsTrigger value="charts">Grafische Auswertung</TabsTrigger>
           <TabsTrigger value="users">Benutzer</TabsTrigger>
         </TabsList>
 
@@ -653,6 +654,229 @@ export default function AdminPage() {
               </div>
             </CollapsibleContent>
           </Collapsible>
+        </TabsContent>
+        
+        <TabsContent value="charts">
+          <Tabs defaultValue="all" className="w-full">
+            <TabsList className="w-full md:w-auto mb-4">
+              <TabsTrigger value="all">Alle Standorte</TabsTrigger>
+              <TabsTrigger value="geesthacht">Geesthacht</TabsTrigger>
+              <TabsTrigger value="buchen">Büchen</TabsTrigger>
+              <TabsTrigger value="schwarzenbek">Schwarzenbek</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="all">
+              <div className="space-y-8">
+                <h2 className="text-2xl font-bold">Grafische Auswertung für alle Standorte</h2>
+                
+                {stats && (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <Card className="p-4">
+                        <CardHeader>
+                          <CardTitle>Besuche nach Wochentag</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <StatsDisplay 
+                            data={stats.weekday} 
+                            type="weekday" 
+                          />
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="p-4">
+                        <CardHeader>
+                          <CardTitle>Besuche nach Uhrzeit</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <StatsDisplay 
+                            data={stats.timeInterval} 
+                            type="timeInterval" 
+                          />
+                        </CardContent>
+                      </Card>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <Card className="p-4">
+                        <CardHeader>
+                          <CardTitle>Besuche nach Monat</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <StatsDisplay 
+                            data={stats.month} 
+                            type="month" 
+                          />
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="p-4">
+                        <CardHeader>
+                          <CardTitle>Besuche nach Unterkategorie</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <StatsDisplay 
+                            data={stats.subcategory} 
+                            type="subcategory" 
+                          />
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </>
+                )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="geesthacht">
+              <div className="space-y-8">
+                <h2 className="text-2xl font-bold">Grafische Auswertung für Geesthacht</h2>
+                
+                {stats?.byLocation?.Geesthacht && (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <Card className="p-4">
+                        <CardHeader>
+                          <CardTitle>Besuche nach Wochentag</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <StatsDisplay 
+                            data={stats.byLocation.Geesthacht.weekday} 
+                            type="weekday" 
+                          />
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="p-4">
+                        <CardHeader>
+                          <CardTitle>Besuche nach Uhrzeit</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <StatsDisplay 
+                            data={stats.byLocation.Geesthacht.timeInterval} 
+                            type="timeInterval" 
+                          />
+                        </CardContent>
+                      </Card>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <Card className="p-4">
+                        <CardHeader>
+                          <CardTitle>Besuche nach Monat</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <StatsDisplay 
+                            data={stats.byLocation.Geesthacht.month} 
+                            type="month" 
+                          />
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </>
+                )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="buchen">
+              <div className="space-y-8">
+                <h2 className="text-2xl font-bold">Grafische Auswertung für Büchen</h2>
+                
+                {stats?.byLocation?.Büchen && (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <Card className="p-4">
+                        <CardHeader>
+                          <CardTitle>Besuche nach Wochentag</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <StatsDisplay 
+                            data={stats.byLocation.Büchen.weekday} 
+                            type="weekday" 
+                          />
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="p-4">
+                        <CardHeader>
+                          <CardTitle>Besuche nach Uhrzeit</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <StatsDisplay 
+                            data={stats.byLocation.Büchen.timeInterval} 
+                            type="timeInterval" 
+                          />
+                        </CardContent>
+                      </Card>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <Card className="p-4">
+                        <CardHeader>
+                          <CardTitle>Besuche nach Monat</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <StatsDisplay 
+                            data={stats.byLocation.Büchen.month} 
+                            type="month" 
+                          />
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </>
+                )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="schwarzenbek">
+              <div className="space-y-8">
+                <h2 className="text-2xl font-bold">Grafische Auswertung für Schwarzenbek</h2>
+                
+                {stats?.byLocation?.Schwarzenbek && (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <Card className="p-4">
+                        <CardHeader>
+                          <CardTitle>Besuche nach Wochentag</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <StatsDisplay 
+                            data={stats.byLocation.Schwarzenbek.weekday} 
+                            type="weekday" 
+                          />
+                        </CardContent>
+                      </Card>
+                      
+                      <Card className="p-4">
+                        <CardHeader>
+                          <CardTitle>Besuche nach Uhrzeit</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <StatsDisplay 
+                            data={stats.byLocation.Schwarzenbek.timeInterval} 
+                            type="timeInterval" 
+                          />
+                        </CardContent>
+                      </Card>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <Card className="p-4">
+                        <CardHeader>
+                          <CardTitle>Besuche nach Monat</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <StatsDisplay 
+                            data={stats.byLocation.Schwarzenbek.month} 
+                            type="month" 
+                          />
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
         </TabsContent>
         
         <TabsContent value="tables">
