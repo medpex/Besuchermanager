@@ -15,8 +15,16 @@ RUN npm run build
 # Port freigeben
 EXPOSE 5000
 
-# Umgebungsvariable für Produktion
+# Umgebungsvariablen für Produktion
 ENV NODE_ENV=production
+ENV COOKIE_SECURE=false
+ENV COOKIE_SAMESITE=lax
+ENV SESSION_SECRET=supersecretkey123
 
-# Startkommando
+# Kopieren und ausführbar machen des Entrypoints
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+# Entrypoint und Startkommando
+ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["node", "dist/index.js"]
