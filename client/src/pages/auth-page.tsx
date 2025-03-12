@@ -16,13 +16,29 @@ export default function AuthPage() {
   });
 
   const onLogin = async (data: InsertUser) => {
+    console.log("Login attempt with data:", data);
     try {
+      toast({ title: "Info", description: "Login wird verarbeitet..." });
       const result = await login(data);
+      console.log("Login result:", result);
+      
       if (!result.ok) {
-        toast({ title: "Error", description: result.message, variant: "destructive" });
+        toast({ title: "Fehler", description: result.message, variant: "destructive" });
+      } else {
+        toast({ title: "Erfolg", description: "Login erfolgreich!" });
+        
+        // Kurze Verzögerung vor der Weiterleitung
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 1000);
       }
     } catch (error) {
-      toast({ title: "Error", description: "Login failed", variant: "destructive" });
+      console.error("Login error:", error);
+      toast({ 
+        title: "Fehler", 
+        description: error instanceof Error ? error.message : "Login fehlgeschlagen", 
+        variant: "destructive" 
+      });
     }
   };
 

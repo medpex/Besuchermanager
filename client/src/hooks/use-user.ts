@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { InsertUser, SelectUser } from "@db/schema";
+import { api, ApiResponse } from "@/lib/api";
 
 type RequestResult = {
   ok: true;
@@ -13,47 +14,40 @@ async function handleRequest(
   method: string,
   body?: InsertUser
 ): Promise<RequestResult> {
+  console.log(`Handling ${method} request to ${url}`, body);
+  
   try {
-    const response = await fetch(url, {
-      method,
-      headers: body ? { "Content-Type": "application/json" } : undefined,
-      body: body ? JSON.stringify(body) : undefined,
-      credentials: "include",
-    });
-
-    if (!response.ok) {
-      if (response.status >= 500) {
-        return { ok: false, message: response.statusText };
-      }
-
-      const message = await response.text();
-      return { ok: false, message };
+    const result = method === 'POST' 
+      ? await api.post(url, body)
+      : await api.get(url);
+    
+    if (!result.ok) {
+      return { ok: false, message: result.message || 'Unbekannter Fehler' };
     }
-
+    
     return { ok: true };
   } catch (e: any) {
+    console.error("Request error:", e);
     return { ok: false, message: e.toString() };
   }
 }
 
 async function fetchUser(): Promise<SelectUser | null> {
-  const response = await fetch('/api/user', {
-    credentials: 'include'
-  });
-
-  if (!response.ok) {
-    if (response.status === 401) {
+  console.log("Fetching user...");
+  const result = await api.get('/api/user');
+  
+  if (!result.ok) {
+    if (result.status === 401) {
+      console.log("User not authenticated");
       return null;
     }
-
-    if (response.status >= 500) {
-      throw new Error(`${response.status}: ${response.statusText}`);
-    }
-
-    throw new Error(`${response.status}: ${await response.text()}`);
+    
+    console.error("User fetch error:", result.message);
+    throw new Error(result.message);
   }
-
-  return response.json();
+  
+  console.log("User fetched successfully:", result.data);
+  return result.data;
 }
 
 export function useUser() {
