@@ -13,7 +13,10 @@ const categories = {
     "Media Kündigung",
     "Media Kundenverwaltung",
     "Media Technik/HA",
-    "Media Rechnungen/FM"
+    "Media Rechnungen/FM",
+    "Mobilfunk",
+    "Media Beschwerde",
+    "Media Aktion"
   ],
   Energie: [
     "Energie allgemeine Beratung",
@@ -21,16 +24,20 @@ const categories = {
     "Energie Kündigung/Abmeldung",
     "Energie/Kundenverwaltung",
     "Energie Technik/HA",
-    "Energie Rechnungen/FM"
+    "Energie Rechnungen/FM",
+    "Wärme",
+    "Energie Beschwerde",
+    "E-Mobilität",
+    "PV/ Balkonkraftwerk",
+    "Energie Aktion"
   ],
-  Sonstiges: [
-    "E-World",
-    "Beschwerden",
-    "E-Mobilität/PV",
-    "E-Bike Verleih",
+  Allgemeines: [
+    "Allg. Beschwerden",
     "Umzugskartons",
+    "Allg. Aktion",
     "FZB",
-    "Shop"
+    "Netz Anfragen",
+    "Sonstige Anliegen"
   ]
 };
 
