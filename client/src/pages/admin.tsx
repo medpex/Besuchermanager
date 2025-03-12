@@ -674,54 +674,96 @@ export default function AdminPage() {
                 
                 {stats && (
                   <>
-                    <div className="mb-8">
-                      <HeatmapChart
-                        title="Besucherzahlen nach Wochentag und Jahr (Heatmap)"
-                        data={stats.weekday}
-                        xAxisType="weekday"
-                        height={300}
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                      <LineChart
-                        title="Besuchertrend nach Wochentag"
-                        data={stats.weekday}
-                        xAxisType="weekday"
-                        height={350}
-                      />
-                      
-                      <LineChart
-                        title="Besuchertrend nach Tageszeit"
-                        data={stats.timeInterval}
-                        xAxisType="timeInterval"
-                        height={350}
-                      />
-                    </div>
-                    
-                    <div className="mt-8">
-                      <HeatmapChart
-                        title="Besucherzahlen nach Monat und Jahr (Heatmap)"
-                        data={stats.month}
-                        xAxisType="month"
-                        height={300}
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-                      <LineChart
-                        title="Besuchertrend nach Monat"
-                        data={stats.month}
-                        xAxisType="month"
-                        height={350}
-                      />
-                      
-                      <LineChart
-                        title="Besuchertrend nach Unterkategorie"
-                        data={stats.subcategory}
-                        xAxisType="category"
-                        height={350}
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                      <div className="space-y-6">
+                        <h3 className="text-lg font-semibold text-center">Heatmaps</h3>
+                        <div className="grid grid-cols-1 gap-6">
+                          <HeatmapChart
+                            title="Besuche nach Wochentag"
+                            data={stats.weekday}
+                            xAxisType="weekday"
+                            height={280}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                          <HeatmapChart
+                            title="Besuche nach Tageszeit"
+                            data={stats.timeInterval}
+                            xAxisType="timeInterval"
+                            height={280}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                          <HeatmapChart
+                            title="Besuche nach Monat"
+                            data={stats.month}
+                            xAxisType="month"
+                            height={280}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-6">
+                        <h3 className="text-lg font-semibold text-center">Balkendiagramme</h3>
+                        <div className="grid grid-cols-1 gap-6">
+                          <BarChart 
+                            title="Besuche nach Wochentag"
+                            data={stats.weekday}
+                            xAxisType="weekday"
+                            height={280}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                          <BarChart 
+                            title="Besuche nach Tageszeit"
+                            data={stats.timeInterval}
+                            xAxisType="timeInterval"
+                            height={280}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                          <BarChart 
+                            title="Besuche nach Kategorie"
+                            data={stats.subcategory}
+                            xAxisType="category"
+                            height={280}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-6">
+                        <h3 className="text-lg font-semibold text-center">Liniendiagramme</h3>
+                        <div className="grid grid-cols-1 gap-6">
+                          <LineChart 
+                            title="Besuche nach Wochentag"
+                            data={stats.weekday}
+                            xAxisType="weekday"
+                            height={280}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                          <LineChart 
+                            title="Besuche nach Monat"
+                            data={stats.month}
+                            xAxisType="month"
+                            height={280}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                          <LineChart 
+                            title="Besuche nach Kategorie"
+                            data={stats.subcategory}
+                            xAxisType="category"
+                            height={280}
+                          />
+                        </div>
+                      </div>
                     </div>
                   </>
                 )}
@@ -734,47 +776,96 @@ export default function AdminPage() {
                 
                 {stats?.byLocation?.Geesthacht && (
                   <>
-                    <div className="mb-8">
-                      <HeatmapChart
-                        title="Besucherzahlen nach Wochentag und Jahr (Heatmap)"
-                        data={stats.byLocation.Geesthacht.weekday}
-                        xAxisType="weekday"
-                        height={300}
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                      <LineChart
-                        title="Besuchertrend nach Wochentag"
-                        data={stats.byLocation.Geesthacht.weekday}
-                        xAxisType="weekday"
-                        height={350}
-                      />
-                      
-                      <LineChart
-                        title="Besuchertrend nach Tageszeit"
-                        data={stats.byLocation.Geesthacht.timeInterval}
-                        xAxisType="timeInterval"
-                        height={350}
-                      />
-                    </div>
-                    
-                    <div className="mt-8">
-                      <HeatmapChart
-                        title="Besucherzahlen nach Monat und Jahr (Heatmap)"
-                        data={stats.byLocation.Geesthacht.month}
-                        xAxisType="month"
-                        height={300}
-                      />
-                    </div>
-                    
-                    <div className="mt-8">
-                      <LineChart
-                        title="Besuchertrend nach Monat"
-                        data={stats.byLocation.Geesthacht.month}
-                        xAxisType="month"
-                        height={350}
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                      <div className="space-y-6">
+                        <h3 className="text-lg font-semibold text-center">Heatmaps</h3>
+                        <div className="grid grid-cols-1 gap-6">
+                          <HeatmapChart
+                            title="Besuche nach Wochentag"
+                            data={stats.byLocation.Geesthacht.weekday}
+                            xAxisType="weekday"
+                            height={280}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                          <HeatmapChart
+                            title="Besuche nach Tageszeit"
+                            data={stats.byLocation.Geesthacht.timeInterval}
+                            xAxisType="timeInterval"
+                            height={280}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                          <HeatmapChart
+                            title="Besuche nach Monat"
+                            data={stats.byLocation.Geesthacht.month}
+                            xAxisType="month"
+                            height={280}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-6">
+                        <h3 className="text-lg font-semibold text-center">Balkendiagramme</h3>
+                        <div className="grid grid-cols-1 gap-6">
+                          <BarChart 
+                            title="Besuche nach Wochentag"
+                            data={stats.byLocation.Geesthacht.weekday}
+                            xAxisType="weekday"
+                            height={280}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                          <BarChart 
+                            title="Besuche nach Tageszeit"
+                            data={stats.byLocation.Geesthacht.timeInterval}
+                            xAxisType="timeInterval"
+                            height={280}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                          <BarChart 
+                            title="Besuche nach Kategorie"
+                            data={stats.byLocation.Geesthacht.subcategory}
+                            xAxisType="category"
+                            height={280}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-6">
+                        <h3 className="text-lg font-semibold text-center">Liniendiagramme</h3>
+                        <div className="grid grid-cols-1 gap-6">
+                          <LineChart 
+                            title="Besuche nach Wochentag"
+                            data={stats.byLocation.Geesthacht.weekday}
+                            xAxisType="weekday"
+                            height={280}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                          <LineChart 
+                            title="Besuche nach Monat"
+                            data={stats.byLocation.Geesthacht.month}
+                            xAxisType="month"
+                            height={280}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                          <LineChart 
+                            title="Besuche nach Kategorie"
+                            data={stats.byLocation.Geesthacht.subcategory}
+                            xAxisType="category"
+                            height={280}
+                          />
+                        </div>
+                      </div>
                     </div>
                   </>
                 )}
@@ -787,47 +878,96 @@ export default function AdminPage() {
                 
                 {stats?.byLocation?.Büchen && (
                   <>
-                    <div className="mb-8">
-                      <HeatmapChart
-                        title="Besucherzahlen nach Wochentag und Jahr (Heatmap)"
-                        data={stats.byLocation.Büchen.weekday}
-                        xAxisType="weekday"
-                        height={300}
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                      <LineChart
-                        title="Besuchertrend nach Wochentag"
-                        data={stats.byLocation.Büchen.weekday}
-                        xAxisType="weekday"
-                        height={350}
-                      />
-                      
-                      <LineChart
-                        title="Besuchertrend nach Tageszeit"
-                        data={stats.byLocation.Büchen.timeInterval}
-                        xAxisType="timeInterval"
-                        height={350}
-                      />
-                    </div>
-                    
-                    <div className="mt-8">
-                      <HeatmapChart
-                        title="Besucherzahlen nach Monat und Jahr (Heatmap)"
-                        data={stats.byLocation.Büchen.month}
-                        xAxisType="month"
-                        height={300}
-                      />
-                    </div>
-                    
-                    <div className="mt-8">
-                      <LineChart
-                        title="Besuchertrend nach Monat"
-                        data={stats.byLocation.Büchen.month}
-                        xAxisType="month"
-                        height={350}
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                      <div className="space-y-6">
+                        <h3 className="text-lg font-semibold text-center">Heatmaps</h3>
+                        <div className="grid grid-cols-1 gap-6">
+                          <HeatmapChart
+                            title="Besuche nach Wochentag"
+                            data={stats.byLocation.Büchen.weekday}
+                            xAxisType="weekday"
+                            height={280}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                          <HeatmapChart
+                            title="Besuche nach Tageszeit"
+                            data={stats.byLocation.Büchen.timeInterval}
+                            xAxisType="timeInterval"
+                            height={280}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                          <HeatmapChart
+                            title="Besuche nach Monat"
+                            data={stats.byLocation.Büchen.month}
+                            xAxisType="month"
+                            height={280}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-6">
+                        <h3 className="text-lg font-semibold text-center">Balkendiagramme</h3>
+                        <div className="grid grid-cols-1 gap-6">
+                          <BarChart 
+                            title="Besuche nach Wochentag"
+                            data={stats.byLocation.Büchen.weekday}
+                            xAxisType="weekday"
+                            height={280}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                          <BarChart 
+                            title="Besuche nach Tageszeit"
+                            data={stats.byLocation.Büchen.timeInterval}
+                            xAxisType="timeInterval"
+                            height={280}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                          <BarChart 
+                            title="Besuche nach Kategorie"
+                            data={stats.byLocation.Büchen.subcategory}
+                            xAxisType="category"
+                            height={280}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-6">
+                        <h3 className="text-lg font-semibold text-center">Liniendiagramme</h3>
+                        <div className="grid grid-cols-1 gap-6">
+                          <LineChart 
+                            title="Besuche nach Wochentag"
+                            data={stats.byLocation.Büchen.weekday}
+                            xAxisType="weekday"
+                            height={280}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                          <LineChart 
+                            title="Besuche nach Monat"
+                            data={stats.byLocation.Büchen.month}
+                            xAxisType="month"
+                            height={280}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                          <LineChart 
+                            title="Besuche nach Kategorie"
+                            data={stats.byLocation.Büchen.subcategory}
+                            xAxisType="category"
+                            height={280}
+                          />
+                        </div>
+                      </div>
                     </div>
                   </>
                 )}
@@ -840,47 +980,96 @@ export default function AdminPage() {
                 
                 {stats?.byLocation?.Schwarzenbek && (
                   <>
-                    <div className="mb-8">
-                      <HeatmapChart
-                        title="Besucherzahlen nach Wochentag und Jahr (Heatmap)"
-                        data={stats.byLocation.Schwarzenbek.weekday}
-                        xAxisType="weekday"
-                        height={300}
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                      <LineChart
-                        title="Besuchertrend nach Wochentag"
-                        data={stats.byLocation.Schwarzenbek.weekday}
-                        xAxisType="weekday"
-                        height={350}
-                      />
-                      
-                      <LineChart
-                        title="Besuchertrend nach Tageszeit"
-                        data={stats.byLocation.Schwarzenbek.timeInterval}
-                        xAxisType="timeInterval"
-                        height={350}
-                      />
-                    </div>
-                    
-                    <div className="mt-8">
-                      <HeatmapChart
-                        title="Besucherzahlen nach Monat und Jahr (Heatmap)"
-                        data={stats.byLocation.Schwarzenbek.month}
-                        xAxisType="month"
-                        height={300}
-                      />
-                    </div>
-                    
-                    <div className="mt-8">
-                      <LineChart
-                        title="Besuchertrend nach Monat"
-                        data={stats.byLocation.Schwarzenbek.month}
-                        xAxisType="month"
-                        height={350}
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                      <div className="space-y-6">
+                        <h3 className="text-lg font-semibold text-center">Heatmaps</h3>
+                        <div className="grid grid-cols-1 gap-6">
+                          <HeatmapChart
+                            title="Besuche nach Wochentag"
+                            data={stats.byLocation.Schwarzenbek.weekday}
+                            xAxisType="weekday"
+                            height={280}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                          <HeatmapChart
+                            title="Besuche nach Tageszeit"
+                            data={stats.byLocation.Schwarzenbek.timeInterval}
+                            xAxisType="timeInterval"
+                            height={280}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                          <HeatmapChart
+                            title="Besuche nach Monat"
+                            data={stats.byLocation.Schwarzenbek.month}
+                            xAxisType="month"
+                            height={280}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-6">
+                        <h3 className="text-lg font-semibold text-center">Balkendiagramme</h3>
+                        <div className="grid grid-cols-1 gap-6">
+                          <BarChart 
+                            title="Besuche nach Wochentag"
+                            data={stats.byLocation.Schwarzenbek.weekday}
+                            xAxisType="weekday"
+                            height={280}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                          <BarChart 
+                            title="Besuche nach Tageszeit"
+                            data={stats.byLocation.Schwarzenbek.timeInterval}
+                            xAxisType="timeInterval"
+                            height={280}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                          <BarChart 
+                            title="Besuche nach Kategorie"
+                            data={stats.byLocation.Schwarzenbek.subcategory}
+                            xAxisType="category"
+                            height={280}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-6">
+                        <h3 className="text-lg font-semibold text-center">Liniendiagramme</h3>
+                        <div className="grid grid-cols-1 gap-6">
+                          <LineChart 
+                            title="Besuche nach Wochentag"
+                            data={stats.byLocation.Schwarzenbek.weekday}
+                            xAxisType="weekday"
+                            height={280}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                          <LineChart 
+                            title="Besuche nach Monat"
+                            data={stats.byLocation.Schwarzenbek.month}
+                            xAxisType="month"
+                            height={280}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                          <LineChart 
+                            title="Besuche nach Kategorie"
+                            data={stats.byLocation.Schwarzenbek.subcategory}
+                            xAxisType="category"
+                            height={280}
+                          />
+                        </div>
+                      </div>
                     </div>
                   </>
                 )}
