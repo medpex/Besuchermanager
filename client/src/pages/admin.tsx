@@ -5,6 +5,8 @@ import StatsDisplay from "@/components/stats-display";
 import StatsTable from "@/components/stats-table";
 import CategoryMonthlyStats from "@/components/category-monthly-stats";
 import SubcategoryMonthlyStats from "@/components/subcategory-monthly-stats";
+import LineChart from "@/components/charts/line-chart";
+import HeatmapChart from "@/components/charts/heatmap-chart";
 import { useVisits } from "@/hooks/use-visits";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUser } from "@/hooks/use-user";
@@ -671,56 +673,54 @@ export default function AdminPage() {
                 
                 {stats && (
                   <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <Card className="p-4">
-                        <CardHeader>
-                          <CardTitle>Besuche nach Wochentag</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <StatsDisplay 
-                            data={stats.weekday} 
-                            type="weekday" 
-                          />
-                        </CardContent>
-                      </Card>
-                      
-                      <Card className="p-4">
-                        <CardHeader>
-                          <CardTitle>Besuche nach Uhrzeit</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <StatsDisplay 
-                            data={stats.timeInterval} 
-                            type="timeInterval" 
-                          />
-                        </CardContent>
-                      </Card>
+                    <div className="mb-8">
+                      <HeatmapChart
+                        title="Besucherzahlen nach Wochentag und Jahr (Heatmap)"
+                        data={stats.weekday}
+                        xAxisType="weekday"
+                        height={300}
+                      />
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <Card className="p-4">
-                        <CardHeader>
-                          <CardTitle>Besuche nach Monat</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <StatsDisplay 
-                            data={stats.month} 
-                            type="month" 
-                          />
-                        </CardContent>
-                      </Card>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      <LineChart
+                        title="Besuchertrend nach Wochentag"
+                        data={stats.weekday}
+                        xAxisType="weekday"
+                        height={350}
+                      />
                       
-                      <Card className="p-4">
-                        <CardHeader>
-                          <CardTitle>Besuche nach Unterkategorie</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <StatsDisplay 
-                            data={stats.subcategory} 
-                            type="subcategory" 
-                          />
-                        </CardContent>
-                      </Card>
+                      <LineChart
+                        title="Besuchertrend nach Tageszeit"
+                        data={stats.timeInterval}
+                        xAxisType="timeInterval"
+                        height={350}
+                      />
+                    </div>
+                    
+                    <div className="mt-8">
+                      <HeatmapChart
+                        title="Besucherzahlen nach Monat und Jahr (Heatmap)"
+                        data={stats.month}
+                        xAxisType="month"
+                        height={300}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+                      <LineChart
+                        title="Besuchertrend nach Monat"
+                        data={stats.month}
+                        xAxisType="month"
+                        height={350}
+                      />
+                      
+                      <LineChart
+                        title="Besuchertrend nach Unterkategorie"
+                        data={stats.subcategory}
+                        xAxisType="category"
+                        height={350}
+                      />
                     </div>
                   </>
                 )}
@@ -733,44 +733,47 @@ export default function AdminPage() {
                 
                 {stats?.byLocation?.Geesthacht && (
                   <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <Card className="p-4">
-                        <CardHeader>
-                          <CardTitle>Besuche nach Wochentag</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <StatsDisplay 
-                            data={stats.byLocation.Geesthacht.weekday} 
-                            type="weekday" 
-                          />
-                        </CardContent>
-                      </Card>
-                      
-                      <Card className="p-4">
-                        <CardHeader>
-                          <CardTitle>Besuche nach Uhrzeit</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <StatsDisplay 
-                            data={stats.byLocation.Geesthacht.timeInterval} 
-                            type="timeInterval" 
-                          />
-                        </CardContent>
-                      </Card>
+                    <div className="mb-8">
+                      <HeatmapChart
+                        title="Besucherzahlen nach Wochentag und Jahr (Heatmap)"
+                        data={stats.byLocation.Geesthacht.weekday}
+                        xAxisType="weekday"
+                        height={300}
+                      />
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <Card className="p-4">
-                        <CardHeader>
-                          <CardTitle>Besuche nach Monat</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <StatsDisplay 
-                            data={stats.byLocation.Geesthacht.month} 
-                            type="month" 
-                          />
-                        </CardContent>
-                      </Card>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      <LineChart
+                        title="Besuchertrend nach Wochentag"
+                        data={stats.byLocation.Geesthacht.weekday}
+                        xAxisType="weekday"
+                        height={350}
+                      />
+                      
+                      <LineChart
+                        title="Besuchertrend nach Tageszeit"
+                        data={stats.byLocation.Geesthacht.timeInterval}
+                        xAxisType="timeInterval"
+                        height={350}
+                      />
+                    </div>
+                    
+                    <div className="mt-8">
+                      <HeatmapChart
+                        title="Besucherzahlen nach Monat und Jahr (Heatmap)"
+                        data={stats.byLocation.Geesthacht.month}
+                        xAxisType="month"
+                        height={300}
+                      />
+                    </div>
+                    
+                    <div className="mt-8">
+                      <LineChart
+                        title="Besuchertrend nach Monat"
+                        data={stats.byLocation.Geesthacht.month}
+                        xAxisType="month"
+                        height={350}
+                      />
                     </div>
                   </>
                 )}
@@ -783,44 +786,47 @@ export default function AdminPage() {
                 
                 {stats?.byLocation?.Büchen && (
                   <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <Card className="p-4">
-                        <CardHeader>
-                          <CardTitle>Besuche nach Wochentag</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <StatsDisplay 
-                            data={stats.byLocation.Büchen.weekday} 
-                            type="weekday" 
-                          />
-                        </CardContent>
-                      </Card>
-                      
-                      <Card className="p-4">
-                        <CardHeader>
-                          <CardTitle>Besuche nach Uhrzeit</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <StatsDisplay 
-                            data={stats.byLocation.Büchen.timeInterval} 
-                            type="timeInterval" 
-                          />
-                        </CardContent>
-                      </Card>
+                    <div className="mb-8">
+                      <HeatmapChart
+                        title="Besucherzahlen nach Wochentag und Jahr (Heatmap)"
+                        data={stats.byLocation.Büchen.weekday}
+                        xAxisType="weekday"
+                        height={300}
+                      />
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <Card className="p-4">
-                        <CardHeader>
-                          <CardTitle>Besuche nach Monat</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <StatsDisplay 
-                            data={stats.byLocation.Büchen.month} 
-                            type="month" 
-                          />
-                        </CardContent>
-                      </Card>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      <LineChart
+                        title="Besuchertrend nach Wochentag"
+                        data={stats.byLocation.Büchen.weekday}
+                        xAxisType="weekday"
+                        height={350}
+                      />
+                      
+                      <LineChart
+                        title="Besuchertrend nach Tageszeit"
+                        data={stats.byLocation.Büchen.timeInterval}
+                        xAxisType="timeInterval"
+                        height={350}
+                      />
+                    </div>
+                    
+                    <div className="mt-8">
+                      <HeatmapChart
+                        title="Besucherzahlen nach Monat und Jahr (Heatmap)"
+                        data={stats.byLocation.Büchen.month}
+                        xAxisType="month"
+                        height={300}
+                      />
+                    </div>
+                    
+                    <div className="mt-8">
+                      <LineChart
+                        title="Besuchertrend nach Monat"
+                        data={stats.byLocation.Büchen.month}
+                        xAxisType="month"
+                        height={350}
+                      />
                     </div>
                   </>
                 )}
@@ -833,44 +839,47 @@ export default function AdminPage() {
                 
                 {stats?.byLocation?.Schwarzenbek && (
                   <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <Card className="p-4">
-                        <CardHeader>
-                          <CardTitle>Besuche nach Wochentag</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <StatsDisplay 
-                            data={stats.byLocation.Schwarzenbek.weekday} 
-                            type="weekday" 
-                          />
-                        </CardContent>
-                      </Card>
-                      
-                      <Card className="p-4">
-                        <CardHeader>
-                          <CardTitle>Besuche nach Uhrzeit</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <StatsDisplay 
-                            data={stats.byLocation.Schwarzenbek.timeInterval} 
-                            type="timeInterval" 
-                          />
-                        </CardContent>
-                      </Card>
+                    <div className="mb-8">
+                      <HeatmapChart
+                        title="Besucherzahlen nach Wochentag und Jahr (Heatmap)"
+                        data={stats.byLocation.Schwarzenbek.weekday}
+                        xAxisType="weekday"
+                        height={300}
+                      />
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <Card className="p-4">
-                        <CardHeader>
-                          <CardTitle>Besuche nach Monat</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <StatsDisplay 
-                            data={stats.byLocation.Schwarzenbek.month} 
-                            type="month" 
-                          />
-                        </CardContent>
-                      </Card>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                      <LineChart
+                        title="Besuchertrend nach Wochentag"
+                        data={stats.byLocation.Schwarzenbek.weekday}
+                        xAxisType="weekday"
+                        height={350}
+                      />
+                      
+                      <LineChart
+                        title="Besuchertrend nach Tageszeit"
+                        data={stats.byLocation.Schwarzenbek.timeInterval}
+                        xAxisType="timeInterval"
+                        height={350}
+                      />
+                    </div>
+                    
+                    <div className="mt-8">
+                      <HeatmapChart
+                        title="Besucherzahlen nach Monat und Jahr (Heatmap)"
+                        data={stats.byLocation.Schwarzenbek.month}
+                        xAxisType="month"
+                        height={300}
+                      />
+                    </div>
+                    
+                    <div className="mt-8">
+                      <LineChart
+                        title="Besuchertrend nach Monat"
+                        data={stats.byLocation.Schwarzenbek.month}
+                        xAxisType="month"
+                        height={350}
+                      />
                     </div>
                   </>
                 )}
