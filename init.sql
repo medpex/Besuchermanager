@@ -1,116 +1,78 @@
+-- Initialisierungsskript für die PostgreSQL-Datenbank im Docker-Container
+-- Dieses Skript wird beim ersten Start des Containers automatisch ausgeführt
+
 -- Tabellen erstellen
 CREATE TABLE IF NOT EXISTS users (
-  id SERIAL PRIMARY KEY,
-  username TEXT UNIQUE NOT NULL,
-  password TEXT NOT NULL,
-  is_admin BOOLEAN DEFAULT FALSE NOT NULL
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    display_name VARCHAR(100),
+    is_admin BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS visits (
-  id SERIAL PRIMARY KEY,
-  timestamp TIMESTAMP DEFAULT NOW() NOT NULL,
-  category TEXT NOT NULL,
-  subcategory TEXT NOT NULL,
-  office_location TEXT NOT NULL,
-  created_by INTEGER REFERENCES users(id) NOT NULL
+    id SERIAL PRIMARY KEY,
+    category VARCHAR(100) NOT NULL,
+    subcategory VARCHAR(100) NOT NULL,
+    office_location VARCHAR(100) NOT NULL,
+    timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_by INTEGER REFERENCES users(id)
 );
 
--- Admin-Benutzer erstellen (Passwort: J123654789j)
-INSERT INTO users (username, password, is_admin) 
-VALUES ('admin', '1abb6f374c76b34f25cfa6b9a5eeba29df9ecdfec0157760f461c370ec32debb1aa6f12887c3c1de1d3bb9e599c52b76915c1bc294480abb35ac6fb1ecac32a0.ddf9ff73c2a87b5df300ac75c9671859', TRUE);
+-- Standard-Admin-Benutzer erstellen
+INSERT INTO users (username, password, display_name, is_admin)
+VALUES 
+    ('admin', '$2b$10$UM4SrNTJVkVcyNSPFaBVoeYUuK6.jKPAHncVTtEdSrhzA1lEWWGlK', 'Administrator', TRUE),
+    ('benutzer', '$2b$10$a9FNdtfduv.YMAMi7FtM8OsJ03KOUXqeUP9Epr.a7kpwWWmeobxBS', 'Benutzer', FALSE)
+ON CONFLICT (username) DO NOTHING;
 
--- Normalen Benutzer erstellen (Passwort: user123)
-INSERT INTO users (username, password, is_admin) 
-VALUES ('benutzer', '3ace64ccca6a4f5887f42c210b3f21a9e9bb2ed442cc72df2ff0c39f93725b766ed41c9b61c95592b4a0f3de98d9b6ed13f34b222ef578c33f9cd908582123b7.5e6ff1b2ca4de2f4b7b773671d75f106', FALSE);
-
--- Beispieldaten: Besuche
--- Heutige Besuche für Geesthacht
-INSERT INTO visits (timestamp, category, subcategory, office_location, created_by) VALUES
-(NOW(), 'Media', 'Media allgemeine Beratung', 'Geesthacht', 1),
-(NOW(), 'Media', 'Media Vertragsabschluss', 'Geesthacht', 1),
-(NOW(), 'Energie', 'Energie allgemeine Beratung', 'Geesthacht', 1),
-(NOW(), 'Sonstiges', 'Beschwerden', 'Geesthacht', 1);
-
--- Besuche vom Vortag für Büchen
-INSERT INTO visits (timestamp, category, subcategory, office_location, created_by) VALUES
-(NOW() - INTERVAL '1 day', 'Media', 'Media Kundenverwaltung', 'Büchen', 2),
-(NOW() - INTERVAL '1 day', 'Media', 'Media Technik/HA', 'Büchen', 2),
-(NOW() - INTERVAL '1 day', 'Energie', 'Energie Vertragsabschluss', 'Büchen', 2),
-(NOW() - INTERVAL '1 day', 'Energie', 'Energie/Kundenverwaltung', 'Büchen', 2);
-
--- Besuche von letzter Woche für Schwarzenbek
-INSERT INTO visits (timestamp, category, subcategory, office_location, created_by) VALUES
-(NOW() - INTERVAL '7 days', 'Media', 'Media Rechnungen/FM', 'Schwarzenbek', 1),
-(NOW() - INTERVAL '7 days', 'Energie', 'Energie Rechnungen/FM', 'Schwarzenbek', 1),
-(NOW() - INTERVAL '7 days', 'Energie', 'Energie Technik/HA', 'Schwarzenbek', 1),
-(NOW() - INTERVAL '7 days', 'Sonstiges', 'E-Mobilität/PV', 'Schwarzenbek', 1),
-(NOW() - INTERVAL '7 days', 'Sonstiges', 'E-Bike Verleih', 'Schwarzenbek', 1),
-(NOW() - INTERVAL '7 days', 'Sonstiges', 'Shop', 'Schwarzenbek', 1);
-
--- Weitere historische Besuche (zufällig verteilt)
+-- Einige Beispiel-Besuche einfügen, wenn die Tabelle leer ist
 DO $$
-DECLARE
-  random_date TIMESTAMP;
-  category_name TEXT;
-  subcategory_name TEXT;
-  office_name TEXT;
-  user_id INTEGER;
-  r FLOAT;
 BEGIN
-  FOR i IN 1..50 LOOP
-    -- Zufälliges Datum innerhalb der letzten 30 Tage
-    random_date := NOW() - (INTERVAL '1 day' * (random() * 30)::INTEGER);
-    
-    -- Zufällige Kategorie
-    r := random();
-    IF r < 0.33 THEN
-      category_name := 'Media';
-      -- Zufällige Subkategorie für Media
-      r := random();
-      IF r < 0.17 THEN subcategory_name := 'Media allgemeine Beratung';
-      ELSIF r < 0.34 THEN subcategory_name := 'Media Vertragsabschluss';
-      ELSIF r < 0.51 THEN subcategory_name := 'Media Kündigung';
-      ELSIF r < 0.68 THEN subcategory_name := 'Media Kundenverwaltung';
-      ELSIF r < 0.85 THEN subcategory_name := 'Media Technik/HA';
-      ELSE subcategory_name := 'Media Rechnungen/FM';
-      END IF;
-    ELSIF r < 0.66 THEN
-      category_name := 'Energie';
-      -- Zufällige Subkategorie für Energie
-      r := random();
-      IF r < 0.17 THEN subcategory_name := 'Energie allgemeine Beratung';
-      ELSIF r < 0.34 THEN subcategory_name := 'Energie Vertragsabschluss';
-      ELSIF r < 0.51 THEN subcategory_name := 'Energie Kündigung/Abmeldung';
-      ELSIF r < 0.68 THEN subcategory_name := 'Energie/Kundenverwaltung';
-      ELSIF r < 0.85 THEN subcategory_name := 'Energie Technik/HA';
-      ELSE subcategory_name := 'Energie Rechnungen/FM';
-      END IF;
-    ELSE
-      category_name := 'Sonstiges';
-      -- Zufällige Subkategorie für Sonstiges
-      r := random();
-      IF r < 0.14 THEN subcategory_name := 'E-World';
-      ELSIF r < 0.28 THEN subcategory_name := 'Beschwerden';
-      ELSIF r < 0.42 THEN subcategory_name := 'E-Mobilität/PV';
-      ELSIF r < 0.56 THEN subcategory_name := 'E-Bike Verleih';
-      ELSIF r < 0.70 THEN subcategory_name := 'Umzugskartons';
-      ELSIF r < 0.84 THEN subcategory_name := 'FZB';
-      ELSE subcategory_name := 'Shop';
-      END IF;
+    IF (SELECT COUNT(*) FROM visits) = 0 THEN
+        -- Benutzer-IDs abrufen
+        DECLARE
+            admin_id INTEGER := (SELECT id FROM users WHERE username = 'admin');
+            user_id INTEGER := (SELECT id FROM users WHERE username = 'benutzer');
+        BEGIN
+            -- Beispieldaten für verschiedene Kategorien und Standorte einfügen
+            -- Geesthacht
+            INSERT INTO visits (category, subcategory, office_location, timestamp, created_by)
+            VALUES 
+                ('Beratungsgespräch', 'Wohngeld', 'Geesthacht', NOW() - INTERVAL '1 day', admin_id),
+                ('Beratungsgespräch', 'Sozialhilfe', 'Geesthacht', NOW() - INTERVAL '2 day', admin_id),
+                ('Antragstellung', 'Wohngeld', 'Geesthacht', NOW() - INTERVAL '3 day', user_id),
+                ('Antragstellung', 'Sozialhilfe', 'Geesthacht', NOW() - INTERVAL '4 day', user_id),
+                ('Informationen', 'Allgemein', 'Geesthacht', NOW() - INTERVAL '5 day', admin_id);
+                
+            -- Büchen
+            INSERT INTO visits (category, subcategory, office_location, timestamp, created_by)
+            VALUES 
+                ('Beratungsgespräch', 'Wohngeld', 'Büchen', NOW() - INTERVAL '1 day', user_id),
+                ('Beratungsgespräch', 'Sozialhilfe', 'Büchen', NOW() - INTERVAL '2 day', user_id),
+                ('Antragstellung', 'Wohngeld', 'Büchen', NOW() - INTERVAL '3 day', admin_id),
+                ('Antragstellung', 'Bürgergeld', 'Büchen', NOW() - INTERVAL '4 day', admin_id),
+                ('Informationen', 'Allgemein', 'Büchen', NOW() - INTERVAL '5 day', user_id);
+                
+            -- Schwarzenbek
+            INSERT INTO visits (category, subcategory, office_location, timestamp, created_by)
+            VALUES 
+                ('Beratungsgespräch', 'Bürgergeld', 'Schwarzenbek', NOW() - INTERVAL '1 day', admin_id),
+                ('Beratungsgespräch', 'Sozialhilfe', 'Schwarzenbek', NOW() - INTERVAL '2 day', user_id),
+                ('Antragstellung', 'Bürgergeld', 'Schwarzenbek', NOW() - INTERVAL '3 day', user_id),
+                ('Antragstellung', 'Wohngeld', 'Schwarzenbek', NOW() - INTERVAL '4 day', admin_id),
+                ('Informationen', 'Allgemein', 'Schwarzenbek', NOW() - INTERVAL '5 day', user_id);
+                
+            -- Weitere Einträge für statistische Verteilung
+            INSERT INTO visits (category, subcategory, office_location, timestamp, created_by)
+            SELECT
+                CASE WHEN random() < 0.33 THEN 'Beratungsgespräch' WHEN random() < 0.66 THEN 'Antragstellung' ELSE 'Informationen' END,
+                CASE WHEN random() < 0.25 THEN 'Wohngeld' WHEN random() < 0.5 THEN 'Sozialhilfe' WHEN random() < 0.75 THEN 'Bürgergeld' ELSE 'Allgemein' END,
+                CASE WHEN random() < 0.33 THEN 'Geesthacht' WHEN random() < 0.66 THEN 'Büchen' ELSE 'Schwarzenbek' END,
+                NOW() - (random() * 365 * 2 || ' days')::INTERVAL,
+                CASE WHEN random() < 0.5 THEN admin_id ELSE user_id END
+            FROM generate_series(1, 100);
+        END;
     END IF;
-    
-    -- Zufälliger Standort
-    r := random();
-    IF r < 0.33 THEN office_name := 'Geesthacht';
-    ELSIF r < 0.66 THEN office_name := 'Büchen';
-    ELSE office_name := 'Schwarzenbek';
-    END IF;
-    
-    -- Zufälliger Benutzer
-    user_id := CASE WHEN random() < 0.5 THEN 1 ELSE 2 END;
-    
-    -- Einfügen des Besuchs
-    INSERT INTO visits (timestamp, category, subcategory, office_location, created_by)
-    VALUES (random_date, category_name, subcategory_name, office_name, user_id);
-  END LOOP;
 END $$;
