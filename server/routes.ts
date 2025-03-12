@@ -152,6 +152,132 @@ export function registerRoutes(app: Express): Server {
         LIMIT 3;
       `);
 
+      // Daten für die Standorte einzeln
+      const officeLocations = ["Geesthacht", "Büchen", "Schwarzenbek"];
+      
+      const locationStats = {};
+      
+      for (const location of officeLocations) {
+        // Weekday stats for this location
+        const locationWeekdayStats = await db.execute(sql`
+          WITH visit_years AS (
+            SELECT DISTINCT date_part('year', timestamp)::text as year
+            FROM visits
+            WHERE office_location = ${location}
+            ORDER BY year DESC
+            LIMIT 5
+          )
+          SELECT 
+            initcap(to_char(timestamp, 'day')) as name,
+            date_part('year', timestamp)::text as year,
+            COUNT(*) as count
+          FROM visits 
+          WHERE 
+            office_location = ${location} AND
+            date_part('year', timestamp)::text IN (SELECT year FROM visit_years)
+          GROUP BY 
+            initcap(to_char(timestamp, 'day')),
+            date_part('year', timestamp)::text,
+            EXTRACT(isodow FROM timestamp)
+          ORDER BY EXTRACT(isodow FROM timestamp);
+        `);
+
+        // Time interval stats for this location
+        const locationTimeIntervalStats = await db.execute(sql`
+          WITH visit_years AS (
+            SELECT DISTINCT date_part('year', timestamp)::text as year
+            FROM visits
+            WHERE office_location = ${location}
+            ORDER BY year DESC
+            LIMIT 5
+          )
+          SELECT 
+            time_bucket as name,
+            date_part('year', timestamp)::text as year,
+            COUNT(*) as count
+          FROM (
+            SELECT 
+              timestamp,
+              CASE 
+                WHEN EXTRACT(HOUR FROM timestamp) < 10 THEN '08:00-10:00'
+                WHEN EXTRACT(HOUR FROM timestamp) < 12 THEN '10:00-12:00'
+                WHEN EXTRACT(HOUR FROM timestamp) < 14 THEN '12:00-14:00'
+                WHEN EXTRACT(HOUR FROM timestamp) < 16 THEN '14:00-16:00'
+                ELSE '16:00-18:00'
+              END as time_bucket
+            FROM visits
+            WHERE office_location = ${location}
+          ) subquery
+          WHERE date_part('year', timestamp)::text IN (SELECT year FROM visit_years)
+          GROUP BY time_bucket, date_part('year', timestamp)::text
+          ORDER BY time_bucket;
+        `);
+
+        // Monthly stats for this location
+        const locationMonthlyStats = await db.execute(sql`
+          WITH visit_years AS (
+            SELECT DISTINCT date_part('year', timestamp)::text as year
+            FROM visits
+            WHERE office_location = ${location}
+            ORDER BY year DESC
+            LIMIT 5
+          )
+          SELECT 
+            initcap(to_char(timestamp, 'month')) as name,
+            date_part('year', timestamp)::text as year,
+            COUNT(*) as count
+          FROM visits 
+          WHERE 
+            office_location = ${location} AND
+            date_part('year', timestamp)::text IN (SELECT year FROM visit_years)
+          GROUP BY 
+            initcap(to_char(timestamp, 'month')),
+            date_part('year', timestamp)::text,
+            EXTRACT(month FROM timestamp)
+          ORDER BY EXTRACT(month FROM timestamp);
+        `);
+
+        // Kategorie-basierte Auswertung für Standorte
+        const locationCategoryStats = await db.execute(sql`
+          WITH visit_years AS (
+            SELECT DISTINCT date_part('year', timestamp)::text as year
+            FROM visits
+            WHERE office_location = ${location}
+            ORDER BY year DESC
+            LIMIT 5
+          )
+          SELECT 
+            category,
+            subcategory,
+            date_part('year', timestamp)::text as year,
+            EXTRACT(month FROM timestamp) as month,
+            EXTRACT(year FROM timestamp) as timestamp_year,
+            COUNT(*) as count,
+            timestamp
+          FROM visits 
+          WHERE 
+            office_location = ${location} AND
+            date_part('year', timestamp)::text IN (SELECT year FROM visit_years)
+          GROUP BY 
+            category,
+            subcategory,
+            date_part('year', timestamp)::text,
+            EXTRACT(month FROM timestamp),
+            EXTRACT(year FROM timestamp),
+            timestamp
+          ORDER BY 
+            date_part('year', timestamp)::text DESC,
+            EXTRACT(month FROM timestamp) ASC;
+        `);
+
+        locationStats[location] = {
+          weekday: locationWeekdayStats.rows,
+          timeInterval: locationTimeIntervalStats.rows,
+          month: locationMonthlyStats.rows,
+          categoryData: locationCategoryStats.rows
+        };
+      }
+
       // Transform data for frontend
       const transformData = (rows: any[]) => {
         const result = {};
@@ -175,12 +301,23 @@ export function registerRoutes(app: Express): Server {
         return Object.values(result);
       };
 
+      // Für jeden Standort die Daten transformieren
+      for (const location of officeLocations) {
+        if (locationStats[location]) {
+          locationStats[location].weekday = transformData(locationStats[location].weekday);
+          locationStats[location].timeInterval = transformData(locationStats[location].timeInterval);
+          locationStats[location].month = transformData(locationStats[location].month);
+          // category data bleibt unverändert
+        }
+      }
+
       res.json({
         weekday: transformData(weekdayStats.rows),
         timeInterval: transformData(timeIntervalStats.rows),
         month: transformData(monthlyStats.rows),
         subcategory: transformData(subcategoryStats.rows),
-        topCategories: topCategoriesStats.rows
+        topCategories: topCategoriesStats.rows,
+        byLocation: locationStats
       });
     } catch (error) {
       console.error('Stats error:', error);

@@ -210,10 +210,10 @@ export default function VisitorForm() {
 
         {/* General Section - Green */}
         <div className="space-y-2">
-          {categories.Sonstiges.map((subcategory) => (
+          {categories.Allgemeines.map((subcategory) => (
             <Button
               key={subcategory}
-              onClick={() => handleVisit("Sonstiges", subcategory)}
+              onClick={() => handleVisit("Allgemeines", subcategory)}
               className="w-full bg-green-600 hover:bg-green-700 text-white"
             >
               {subcategory}

@@ -2,6 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import StatsDisplay from "@/components/stats-display";
+import StatsTable from "@/components/stats-table";
+import CategoryMonthlyStats from "@/components/category-monthly-stats";
+import SubcategoryMonthlyStats from "@/components/subcategory-monthly-stats";
 import { useVisits } from "@/hooks/use-visits";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUser } from "@/hooks/use-user";
@@ -51,7 +54,7 @@ function TopCategoriesCard({ data }) {
   const colors = {
     "Media": "#3b82f6", // blue
     "Energie": "#10b981", // green
-    "Sonstiges": "#f59e0b", // amber
+    "Allgemeines": "#f59e0b", // amber
   };
 
   return (
@@ -482,8 +485,8 @@ export default function AdminPage() {
 
   const toggleUserStatus = async (userId: number, isActive: boolean) => {
     try {
-      const response = await fetch(`/api/admin/users/${userId}/status`, {
-        method: "PUT",
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive }),
         credentials: "include",
@@ -497,6 +500,7 @@ export default function AdminPage() {
         title: "Erfolg",
         description: `Benutzer ${isActive ? "aktiviert" : "deaktiviert"}`,
       });
+
       refetch();
     } catch (error: any) {
       toast({
@@ -509,235 +513,449 @@ export default function AdminPage() {
 
   if (!user?.isAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Card className="w-[400px]">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 text-destructive">
-              <AlertCircle className="h-5 w-5" />
-              <p>Sie haben keine Berechtigung, diese Seite aufzurufen.</p>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="max-w-md text-center">
+          <AlertCircle className="mx-auto h-12 w-12 text-red-500" />
+          <h2 className="mt-2 text-2xl font-semibold">Zugriff verweigert</h2>
+          <p className="mt-2 text-gray-500">
+            Sie haben keine Berechtigung, auf diese Seite zuzugreifen. Bitte wenden Sie sich an einen Administrator.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="visits">
-          <TabsList className="mb-6">
-            <TabsTrigger value="visits" className="text-base">Besucherstatistiken</TabsTrigger>
-            {user.isAdmin && (
-              <TabsTrigger value="users" className="text-base">Benutzerverwaltung</TabsTrigger>
-            )}
-          </TabsList>
-
-          <TabsContent value="visits">
-            {statistics && (
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold mb-4">Übersicht</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <TotalVisitsCard value={statistics.totalVisits} />
-                  <TodayVisitsCard 
-                    value={statistics.visitsToday} 
-                    totalVisits={statistics.totalVisits} 
-                    onReset={resetStats}
-                  />
-                  <LocationsCard 
-                    locations={statistics.locations}
-                    locationCounts={statistics.locationCounts}
-                    totalVisits={statistics.totalVisits}
-                  />
-                  <TopCategoriesCard data={stats?.topCategories} />
+    <div className="container mx-auto py-10 space-y-8">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold tracking-tight">Administrator-Dashboard</h1>
+        <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <UserPlus className="mr-2 h-4 w-4" />
+              Benutzer hinzufügen
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Neuen Benutzer erstellen</DialogTitle>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Benutzername</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Benutzername" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Passwort</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="Passwort" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="isAdmin"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center gap-2 space-y-0">
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormLabel>Administrator-Rechte</FormLabel>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex justify-end">
+                  <Button type="submit">Benutzer erstellen</Button>
                 </div>
-              </div>
-            )}
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+      </div>
 
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold mb-4">Detaillierte Statistiken</h2>
-              <div className="grid gap-6">
+      <Tabs defaultValue="statistics" className="w-full">
+        <TabsList className="w-full md:w-auto mb-4">
+          <TabsTrigger value="statistics">Statistiken</TabsTrigger>
+          <TabsTrigger value="tables">Tabellarische Auswertung</TabsTrigger>
+          <TabsTrigger value="users">Benutzer</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="statistics">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <TotalVisitsCard value={statistics?.totalVisits} />
+            <TodayVisitsCard 
+              value={statistics?.visitsToday} 
+              totalVisits={statistics?.totalVisits} 
+              onReset={resetStats}
+            />
+          </div>
+
+          <Collapsible
+            open={isVisitsOpen}
+            onOpenChange={setIsVisitsOpen}
+            className="mb-6 border rounded-lg"
+          >
+            <CollapsibleTrigger className="flex items-center justify-between w-full p-4 font-medium">
+              <div className="flex items-center gap-2">
+                <BarChart className="h-5 w-5" /> 
+                <span>Besucherstatistiken</span>
+              </div>
+              <ChevronsUpDown className="h-4 w-4 transition-transform duration-200 ease-in-out" />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="p-4 pt-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <TopCategoriesCard data={stats?.topCategories} />
+                <LocationsCard 
+                  locations={statistics?.locations} 
+                  locationCounts={statistics?.locationCounts}
+                  totalVisits={statistics?.totalVisits}
+                />
+              </div>
+
+              {/* Diagramme */}
+              <div className="mt-6 grid grid-cols-1 gap-6">
                 <StatsDisplay 
-                  data={stats?.weekday || []} 
+                  data={stats?.weekday} 
                   type="weekday" 
                 />
                 <StatsDisplay 
-                  data={stats?.timeInterval || []} 
+                  data={stats?.timeInterval} 
                   type="timeInterval" 
                 />
                 <StatsDisplay 
-                  data={stats?.month || []} 
+                  data={stats?.month} 
                   type="month" 
                 />
-                {/* Neue Unterkategorien-Statistik */}
                 <StatsDisplay 
-                  data={stats?.subcategory || []} 
-                  type="subcategory"
-                  className="mt-4" 
+                  data={stats?.subcategory} 
+                  type="subcategory" 
                 />
               </div>
-            </div>
-
-            <Card className="mb-6 overflow-hidden">
-              <Collapsible
-                open={isVisitsOpen}
-                onOpenChange={setIsVisitsOpen}
-                className="w-full"
-              >
-                <div className="flex items-center justify-between px-6 py-4 border-b">
-                  <h3 className="text-lg font-semibold">Aktuelle Besuche</h3>
-                  <CollapsibleTrigger asChild>
-                    <Button variant="ghost" size="sm" className="w-8 h-8 p-0 rounded-full">
-                      <ChevronsUpDown className="h-4 w-4" />
-                      <span className="sr-only">Besuche ein/ausklappen</span>
-                    </Button>
-                  </CollapsibleTrigger>
-                </div>
-
-                <CollapsibleContent>
-                  <div className="p-6">
-                    <div className="rounded-md border overflow-hidden">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Zeit</TableHead>
-                            <TableHead>Standort</TableHead>
-                            <TableHead>Kategorie</TableHead>
-                            <TableHead>Unterkategorie</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {visits?.map((visit) => (
-                            <TableRow key={visit.id}>
-                              <TableCell>
-                                {new Date(visit.timestamp).toLocaleTimeString('de-DE')}
-                              </TableCell>
-                              <TableCell>{visit.officeLocation}</TableCell>
-                              <TableCell>{visit.category}</TableCell>
-                              <TableCell>{visit.subcategory}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            </Card>
-          </TabsContent>
-
-          {user.isAdmin && (
-            <TabsContent value="users">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle className="text-xl">Benutzerverwaltung</CardTitle>
-                    <CardDescription>Verwalten Sie die Benutzerkonten im System</CardDescription>
-                  </div>
-                  <Button onClick={() => setIsAddUserOpen(true)}>
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Neuer Benutzer
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  <div className="rounded-md border overflow-hidden">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Benutzername</TableHead>
-                          <TableHead>Rolle</TableHead>
-                          <TableHead>Besuche</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Aktionen</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {users?.map((user) => (
-                          <TableRow key={user.id}>
-                            <TableCell className="font-medium">{user.username}</TableCell>
-                            <TableCell>{user.isAdmin ? "Admin" : "Benutzer"}</TableCell>
-                            <TableCell>{user.visitCount || 0}</TableCell>
-                            <TableCell>
-                              <Switch
-                                checked={user.isAdmin}
-                                onCheckedChange={(checked) => toggleUserStatus(user.id, checked)}
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Button variant="outline" size="sm">
-                                Bearbeiten
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-
-                  <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Neuen Benutzer anlegen</DialogTitle>
-                      </DialogHeader>
-                      <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                          <FormField
-                            control={form.control}
-                            name="username"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Benutzername</FormLabel>
-                                <FormControl>
-                                  <Input {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="password"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Passwort</FormLabel>
-                                <FormControl>
-                                  <Input type="password" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="isAdmin"
-                            render={({ field }) => (
-                              <FormItem>
-                                <div className="flex items-center gap-2">
-                                  <FormControl>
-                                    <Switch
-                                      checked={field.value}
-                                      onCheckedChange={field.onChange}
-                                    />
-                                  </FormControl>
-                                  <FormLabel>Admin-Rechte</FormLabel>
-                                </div>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <Button type="submit" className="w-full">
-                            Benutzer erstellen
-                          </Button>
-                        </form>
-                      </Form>
-                    </DialogContent>
-                  </Dialog>
-                </CardContent>
-              </Card>
+            </CollapsibleContent>
+          </Collapsible>
+        </TabsContent>
+        
+        <TabsContent value="tables">
+          <Tabs defaultValue="all" className="w-full">
+            <TabsList className="w-full md:w-auto mb-4">
+              <TabsTrigger value="all">Alle Standorte</TabsTrigger>
+              <TabsTrigger value="geesthacht">Geesthacht</TabsTrigger>
+              <TabsTrigger value="buchen">Büchen</TabsTrigger>
+              <TabsTrigger value="schwarzenbek">Schwarzenbek</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="all">
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold">Auswertung für alle Standorte</h2>
+                
+                {/* Importieren Sie die neue StatsTable Komponente */}
+                {stats && (
+                  <>
+                    <StatsTable 
+                      data={stats.weekday} 
+                      type="weekday" 
+                      title="Besuche - häufigster Wochentag"
+                    />
+                    
+                    <StatsTable 
+                      data={stats.timeInterval} 
+                      type="timeInterval" 
+                      title="Besuche - Uhrzeit Intervall"
+                    />
+                    
+                    <StatsTable 
+                      data={stats.month} 
+                      type="month" 
+                      title="Besuche - häufigster Monat"
+                    />
+                  </>
+                )}
+              </div>
             </TabsContent>
-          )}
-        </Tabs>
-      </main>
+            
+            <TabsContent value="geesthacht">
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold">Auswertung für Geesthacht</h2>
+                
+                {stats?.byLocation?.Geesthacht && (
+                  <>
+                    <StatsTable 
+                      data={stats.byLocation.Geesthacht.weekday} 
+                      type="weekday" 
+                      title="Besuche - häufigster Wochentag"
+                      location="Geesthacht"
+                    />
+                    
+                    <StatsTable 
+                      data={stats.byLocation.Geesthacht.timeInterval} 
+                      type="timeInterval" 
+                      title="Besuche - Uhrzeit Intervall"
+                      location="Geesthacht"
+                    />
+                    
+                    <StatsTable 
+                      data={stats.byLocation.Geesthacht.month} 
+                      type="month" 
+                      title="Besuche - häufigster Monat"
+                      location="Geesthacht"
+                    />
+                    
+                    {/* Tabs für die verschiedenen Jahre */}
+                    <Tabs defaultValue="2025" className="w-full mt-8">
+                      <TabsList className="w-full md:w-auto mb-4">
+                        <TabsTrigger value="2025">2025</TabsTrigger>
+                        <TabsTrigger value="2024">2024</TabsTrigger>
+                        <TabsTrigger value="2023">2023</TabsTrigger>
+                        <TabsTrigger value="2022">2022</TabsTrigger>
+                        <TabsTrigger value="2021">2021</TabsTrigger>
+                      </TabsList>
+                      
+                      {["2025", "2024", "2023", "2022", "2021"].map(year => (
+                        <TabsContent key={year} value={year}>
+                          <CategoryMonthlyStats 
+                            data={stats.byLocation.Geesthacht.categoryData.filter((d: any) => d.year === year)} 
+                            year={year}
+                            location="Geesthacht"
+                          />
+                          
+                          {/* Tabs für die verschiedenen Kategorien */}
+                          <Tabs defaultValue="Media" className="w-full mt-8">
+                            <TabsList className="w-full md:w-auto mb-4">
+                              <TabsTrigger value="Media">Media</TabsTrigger>
+                              <TabsTrigger value="Energie">Energie</TabsTrigger>
+                              <TabsTrigger value="Allgemeines">Allgemeines</TabsTrigger>
+                            </TabsList>
+                            
+                            {["Media", "Energie", "Allgemeines"].map(cat => (
+                              <TabsContent key={cat} value={cat}>
+                                <SubcategoryMonthlyStats 
+                                  data={stats.byLocation.Geesthacht.categoryData.filter((d: any) => d.year === year)} 
+                                  year={year}
+                                  category={cat}
+                                  location="Geesthacht"
+                                />
+                              </TabsContent>
+                            ))}
+                          </Tabs>
+                        </TabsContent>
+                      ))}
+                    </Tabs>
+                  </>
+                )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="buchen">
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold">Auswertung für Büchen</h2>
+                
+                {stats?.byLocation?.Büchen && (
+                  <>
+                    <StatsTable 
+                      data={stats.byLocation.Büchen.weekday} 
+                      type="weekday" 
+                      title="Besuche - häufigster Wochentag"
+                      location="Büchen"
+                    />
+                    
+                    <StatsTable 
+                      data={stats.byLocation.Büchen.timeInterval} 
+                      type="timeInterval" 
+                      title="Besuche - Uhrzeit Intervall"
+                      location="Büchen"
+                    />
+                    
+                    <StatsTable 
+                      data={stats.byLocation.Büchen.month} 
+                      type="month" 
+                      title="Besuche - häufigster Monat"
+                      location="Büchen"
+                    />
+                    
+                    {/* Tabs für die verschiedenen Jahre */}
+                    <Tabs defaultValue="2025" className="w-full mt-8">
+                      <TabsList className="w-full md:w-auto mb-4">
+                        <TabsTrigger value="2025">2025</TabsTrigger>
+                        <TabsTrigger value="2024">2024</TabsTrigger>
+                        <TabsTrigger value="2023">2023</TabsTrigger>
+                        <TabsTrigger value="2022">2022</TabsTrigger>
+                        <TabsTrigger value="2021">2021</TabsTrigger>
+                      </TabsList>
+                      
+                      {["2025", "2024", "2023", "2022", "2021"].map(year => (
+                        <TabsContent key={year} value={year}>
+                          <CategoryMonthlyStats 
+                            data={stats.byLocation.Büchen.categoryData.filter((d: any) => d.year === year)} 
+                            year={year}
+                            location="Büchen"
+                          />
+                          
+                          {/* Tabs für die verschiedenen Kategorien */}
+                          <Tabs defaultValue="Media" className="w-full mt-8">
+                            <TabsList className="w-full md:w-auto mb-4">
+                              <TabsTrigger value="Media">Media</TabsTrigger>
+                              <TabsTrigger value="Energie">Energie</TabsTrigger>
+                              <TabsTrigger value="Allgemeines">Allgemeines</TabsTrigger>
+                            </TabsList>
+                            
+                            {["Media", "Energie", "Allgemeines"].map(cat => (
+                              <TabsContent key={cat} value={cat}>
+                                <SubcategoryMonthlyStats 
+                                  data={stats.byLocation.Büchen.categoryData.filter((d: any) => d.year === year)} 
+                                  year={year}
+                                  category={cat}
+                                  location="Büchen"
+                                />
+                              </TabsContent>
+                            ))}
+                          </Tabs>
+                        </TabsContent>
+                      ))}
+                    </Tabs>
+                  </>
+                )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="schwarzenbek">
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold">Auswertung für Schwarzenbek</h2>
+                
+                {stats?.byLocation?.Schwarzenbek && (
+                  <>
+                    <StatsTable 
+                      data={stats.byLocation.Schwarzenbek.weekday} 
+                      type="weekday" 
+                      title="Besuche - häufigster Wochentag"
+                      location="Schwarzenbek"
+                    />
+                    
+                    <StatsTable 
+                      data={stats.byLocation.Schwarzenbek.timeInterval} 
+                      type="timeInterval" 
+                      title="Besuche - Uhrzeit Intervall"
+                      location="Schwarzenbek"
+                    />
+                    
+                    <StatsTable 
+                      data={stats.byLocation.Schwarzenbek.month} 
+                      type="month" 
+                      title="Besuche - häufigster Monat"
+                      location="Schwarzenbek"
+                    />
+                    
+                    {/* Tabs für die verschiedenen Jahre */}
+                    <Tabs defaultValue="2025" className="w-full mt-8">
+                      <TabsList className="w-full md:w-auto mb-4">
+                        <TabsTrigger value="2025">2025</TabsTrigger>
+                        <TabsTrigger value="2024">2024</TabsTrigger>
+                        <TabsTrigger value="2023">2023</TabsTrigger>
+                        <TabsTrigger value="2022">2022</TabsTrigger>
+                        <TabsTrigger value="2021">2021</TabsTrigger>
+                      </TabsList>
+                      
+                      {["2025", "2024", "2023", "2022", "2021"].map(year => (
+                        <TabsContent key={year} value={year}>
+                          <CategoryMonthlyStats 
+                            data={stats.byLocation.Schwarzenbek.categoryData.filter((d: any) => d.year === year)} 
+                            year={year}
+                            location="Schwarzenbek"
+                          />
+                          
+                          {/* Tabs für die verschiedenen Kategorien */}
+                          <Tabs defaultValue="Media" className="w-full mt-8">
+                            <TabsList className="w-full md:w-auto mb-4">
+                              <TabsTrigger value="Media">Media</TabsTrigger>
+                              <TabsTrigger value="Energie">Energie</TabsTrigger>
+                              <TabsTrigger value="Allgemeines">Allgemeines</TabsTrigger>
+                            </TabsList>
+                            
+                            {["Media", "Energie", "Allgemeines"].map(cat => (
+                              <TabsContent key={cat} value={cat}>
+                                <SubcategoryMonthlyStats 
+                                  data={stats.byLocation.Schwarzenbek.categoryData.filter((d: any) => d.year === year)} 
+                                  year={year}
+                                  category={cat}
+                                  location="Schwarzenbek"
+                                />
+                              </TabsContent>
+                            ))}
+                          </Tabs>
+                        </TabsContent>
+                      ))}
+                    </Tabs>
+                  </>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </TabsContent>
+
+        <TabsContent value="users">
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ID</TableHead>
+                  <TableHead>Benutzername</TableHead>
+                  <TableHead>Admin</TableHead>
+                  <TableHead className="text-right">Besuche</TableHead>
+                  <TableHead className="text-right">Aktionen</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users?.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell className="font-medium">{user.id}</TableCell>
+                    <TableCell>{user.username}</TableCell>
+                    <TableCell>
+                      {user.isAdmin ? (
+                        <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                          Admin
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
+                          Benutzer
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">{user.visitCount}</TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleUserStatus(user.id, !user.isActive)}
+                      >
+                        {user.isActive ? "Deaktivieren" : "Aktivieren"}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
