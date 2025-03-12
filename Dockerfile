@@ -1,29 +1,32 @@
 FROM node:20-alpine
 
+# Arbeitsverzeichnis erstellen
 WORKDIR /app
 
-# Installieren der Abhängigkeiten
-COPY package*.json ./
-RUN npm install
+# PostgreSQL-Client installieren für Gesundheitschecks
+RUN apk add --no-cache postgresql-client
 
-# Kopieren des Projektcodes
+# Abhängigkeiten zuerst kopieren und installieren für besseres Caching
+COPY package*.json ./
+RUN npm ci
+
+# Rest der Anwendung kopieren
 COPY . .
 
 # Build der Anwendung
 RUN npm run build
 
-# Port freigeben
+# Umgebungsvariablen
+ENV NODE_ENV=production
+ENV PORT=5000
+
+# Ports
 EXPOSE 5000
 
-# Umgebungsvariablen für Produktion
-ENV NODE_ENV=production
-ENV COOKIE_SECURE=false
-ENV COOKIE_SAMESITE=lax
-ENV SESSION_SECRET=supersecretkey123
+# Docker-Entrypoint
+COPY docker-entrypoint.sh /
+RUN chmod +x /docker-entrypoint.sh
+ENTRYPOINT ["/docker-entrypoint.sh"]
 
-# Der Entrypoint ist bereits kopiert und muss nur ausführbar gemacht werden
-RUN chmod +x /app/docker-entrypoint.sh
-
-# Entrypoint und Startkommando
-ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD ["node", "dist/index.js"]
+# Standard-Befehl
+CMD ["npm", "start"]

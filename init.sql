@@ -23,8 +23,8 @@ CREATE TABLE IF NOT EXISTS visits (
 -- Standard-Admin-Benutzer erstellen
 INSERT INTO users (username, password, display_name, is_admin)
 VALUES 
-    ('admin', '$2b$10$UM4SrNTJVkVcyNSPFaBVoeYUuK6.jKPAHncVTtEdSrhzA1lEWWGlK', 'Administrator', TRUE),
-    ('benutzer', '$2b$10$a9FNdtfduv.YMAMi7FtM8OsJ03KOUXqeUP9Epr.a7kpwWWmeobxBS', 'Benutzer', FALSE)
+    ('admin', '21da697a798615b0a779499f0c8fc402cb086daab8c33f8e8507e8a79660ba1ccb5465e44cfc6d0a6b766451629f85c3b550d42b1b55c1e1a0e89dfeb0e6bbe2.f69131d310d2a378a3c5ff084df3f06d', 'Administrator', TRUE),
+    ('benutzer', '1c18ebf7b269f7b99b599f939295c792f5c63aec8a5ad7c7d358341c049d8083acd524d266b8272bf91807532e7734b70f1af4fd4c867d0980667feef4ad09e9.04730a13fadcfff6387a6cdd81f38d46', 'Benutzer', FALSE)
 ON CONFLICT (username) DO NOTHING;
 
 -- Einige Beispiel-Besuche einfügen, wenn die Tabelle leer ist

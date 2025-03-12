@@ -2,41 +2,61 @@ version: '3.8'
 
 services:
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: visitor-tracking-app
+    restart: unless-stopped
     ports:
       - "5000:5000"
-    env_file:
-      - .docker.env
     depends_on:
       - db
-    restart: unless-stopped
-    volumes:
-      - app_logs:/app/logs
+    env_file:
+      - .docker.env
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres 
+      - DB_NAME=besucherdb
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/besucherdb
+      - COOKIE_SECURE=false
+      - COOKIE_SAME_SITE=lax
+    networks:
+      - app-network
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:5000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   db:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
+    container_name: visitor-tracking-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=visitor_tracking
+      - POSTGRES_DB=besucherdb
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      # Initialisierungsskript beim ersten Start ausführen
+      - postgres-data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    restart: unless-stopped
+    networks:
+      - app-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
 
 volumes:
-  postgres_data:
-  app_logs:
+  postgres-data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
