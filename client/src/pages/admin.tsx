@@ -7,6 +7,7 @@ import CategoryMonthlyStats from "@/components/category-monthly-stats";
 import SubcategoryMonthlyStats from "@/components/subcategory-monthly-stats";
 import LineChart from "@/components/charts/line-chart";
 import HeatmapChart from "@/components/charts/heatmap-chart";
+import BarChart from "@/components/charts/bar-chart";
 import { useVisits } from "@/hooks/use-visits";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUser } from "@/hooks/use-user";
@@ -18,7 +19,7 @@ import {
   Clock, 
   Users, 
   MapPin,
-  BarChart,
+  BarChart as BarChartIcon,
   PieChart,
   RefreshCcw
 } from "lucide-react";

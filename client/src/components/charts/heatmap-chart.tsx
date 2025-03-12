@@ -12,6 +12,26 @@ const WEEKDAY_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', '
 // Ordnung für Zeitintervalle
 const TIME_INTERVAL_ORDER = ['08:00-10:00', '10:00-12:00', '12:00-14:00', '14:00-16:00', '16:00-18:00'];
 
+// Die Farben für unterschiedliche Jahre
+const YEAR_COLORS = {
+  '2025': '#3b82f6', // blau
+  '2024': '#10b981', // grün
+  '2023': '#f59e0b', // gelb
+  '2022': '#ef4444', // rot
+  '2021': '#8b5cf6'  // lila
+};
+
+// Farbcodes für Intensitäten
+const INTENSITY_COLORS = [
+  '#cce7ff', // sehr niedrig (hellblau)
+  '#99ceff', // niedrig
+  '#66b5ff', // mittel niedrig
+  '#339cff', // mittel
+  '#0084ff', // mittel hoch
+  '#0066cc', // hoch
+  '#004c99', // sehr hoch (dunkelblau)
+];
+
 type HeatmapChartProps = {
   title: string;
   data: any[];
@@ -72,9 +92,61 @@ export default function HeatmapChart({
         const sumB = yearsArray.reduce((sum, year) => sum + (b[year] || 0), 0);
         return sumB - sumA;
       });
-      // Beschränke Kategorien auf die Top 15
-      sortedData = sortedData.slice(0, 15);
+      // Beschränke Kategorien auf die Top 10 für bessere Lesbarkeit
+      sortedData = sortedData.slice(0, 10);
       categories = sortedData.map(item => item.name);
+    }
+
+    // Finden des maximalen Wertes für die Farbskalierung
+    let maxValue = 0;
+    yearsArray.forEach(year => {
+      sortedData.forEach(item => {
+        if (item[year] > maxValue) {
+          maxValue = item[year];
+        }
+      });
+    });
+
+    // Berechne eine sinnvolle Anzahl von Schritten für die Farbskalierung (zwischen 5 und 7)
+    const step = Math.max(1, Math.ceil(maxValue / 6));
+    
+    // Erstelle die Farbskala-Bereiche
+    const colorRanges = [];
+    let currentValue = 0;
+    
+    for (let i = 0; i < INTENSITY_COLORS.length; i++) {
+      const nextValue = Math.min(maxValue, currentValue + step);
+      
+      // Letzter Bereich soll alles bis maxValue abdecken
+      if (i === INTENSITY_COLORS.length - 1) {
+        colorRanges.push({
+          from: currentValue,
+          to: maxValue,
+          color: INTENSITY_COLORS[i],
+          name: `${currentValue}+`
+        });
+      } else {
+        // Sonst normale Bereiche erstellen
+        colorRanges.push({
+          from: currentValue,
+          to: nextValue,
+          color: INTENSITY_COLORS[i],
+          name: `${currentValue} - ${nextValue}`
+        });
+        currentValue = nextValue + 1;
+      }
+      
+      // Wenn wir maxValue erreicht haben, brechen wir ab
+      if (currentValue > maxValue) break;
+    }
+
+    // Für eine kalendarartige Darstellung
+    let useCalendarView = false;
+    let yAxisDataLabels = true;
+    
+    if (xAxisType === 'month' || xAxisType === 'weekday') {
+      useCalendarView = true;
+      yAxisDataLabels = false; // für Kalender sehen Achsenbeschriftungen besser aus als Datenlabels
     }
 
     // Erstelle die Heatmap-Serien (ein Jahr pro Zeile)
@@ -97,18 +169,56 @@ export default function HeatmapChart({
           show: false
         },
         fontFamily: 'inherit',
-      },
-      dataLabels: {
-        enabled: true,
-        style: {
-          colors: ['#fff']
+        animations: {
+          enabled: true,
+          easing: 'easeinout',
+          speed: 800,
+          animateGradually: {
+            enabled: true,
+            delay: 150
+          },
+          dynamicAnimation: {
+            enabled: true,
+            speed: 350
+          }
         }
       },
-      colors: ["#3b82f6"],
+      dataLabels: {
+        enabled: yAxisDataLabels,
+        style: {
+          colors: ['#000'],
+          fontSize: '12px',
+          fontFamily: 'inherit',
+          fontWeight: 'normal'
+        },
+        formatter: (val: number) => val === 0 ? '' : val.toString()
+      },
+      stroke: {
+        width: 1,
+        colors: ['#fff']
+      },
       xaxis: {
         categories: categories,
+        position: 'top',
         labels: {
-          rotate: -45,
+          rotate: useCalendarView ? 0 : -45,
+          style: {
+            colors: '#64748b',
+            fontWeight: 500,
+          }
+        },
+        axisBorder: {
+          show: false
+        },
+        axisTicks: {
+          show: false
+        },
+        tooltip: {
+          enabled: false
+        }
+      },
+      yaxis: {
+        labels: {
           style: {
             colors: '#64748b',
             fontWeight: 500,
@@ -119,8 +229,18 @@ export default function HeatmapChart({
         text: '',
       },
       tooltip: {
-        y: {
-          formatter: (value: number) => `${value} Besuche`
+        custom: ({ series, seriesIndex, dataPointIndex, w }: any) => {
+          const value = series[seriesIndex][dataPointIndex];
+          const xLabel = w.globals.labels[dataPointIndex];
+          const yLabel = w.globals.seriesNames[seriesIndex];
+          return `
+            <div class="apexcharts-tooltip-custom" style="padding: 8px; background: #fff; border-radius: 4px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+              <div style="font-weight: 500; margin-bottom: 4px; color: #333;">${xLabel} - ${yLabel}</div>
+              <div style="font-size: 14px;">
+                <span style="color: ${YEAR_COLORS[yLabel] || '#3b82f6'}; font-weight: 600;">${value} Besuche</span>
+              </div>
+            </div>
+          `;
         }
       },
       grid: {
@@ -133,39 +253,22 @@ export default function HeatmapChart({
       },
       plotOptions: {
         heatmap: {
-          radius: 3,
+          radius: useCalendarView ? 0 : 4,
           enableShades: true,
           shadeIntensity: 0.5,
+          distributed: false,
+          useFillColorAsStroke: false,
           colorScale: {
-            ranges: [
-              {
-                from: 0,
-                to: 5,
-                color: '#b3e0ff',
-                name: 'niedrig',
-              },
-              {
-                from: 6,
-                to: 10,
-                color: '#80c1ff',
-                name: 'mittel',
-              },
-              {
-                from: 11,
-                to: 20,
-                color: '#4da3ff',
-                name: 'hoch',
-              },
-              {
-                from: 21,
-                to: 1000,
-                color: '#0073e6',
-                name: 'sehr hoch',
-              }
-            ]
+            ranges: colorRanges,
+            inverse: false,
+            min: 0,
+            max: maxValue
           }
         }
       },
+      theme: {
+        palette: 'palette1'
+      }
     };
 
     setChartOptions(options);
@@ -179,7 +282,7 @@ export default function HeatmapChart({
           <CardTitle className="text-base font-normal text-gray-500">{title}</CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-center p-6" style={{ height: `${height}px` }}>
-          <p className="text-muted-foreground">Lade Heatmap...</p>
+          <p className="text-muted-foreground">Lade Visualisierung...</p>
         </CardContent>
       </Card>
     );
