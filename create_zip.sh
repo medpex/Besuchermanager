@@ -73,13 +73,23 @@ Nach erfolgreicher Installation kann das System mit folgenden Zugangsdaten errei
 - Logs anzeigen: `sudo journalctl -u besuchererfassung -f`
 EOL
 
-# ZIP-Archiv erstellen
-echo "Erstelle ZIP-Archiv..."
-cd "$TEMP_DIR"
-zip -r "$CURRENT_DIR/$ARCHIVE_NAME" besuchererfassungssystem
+# Prüfen, ob zip installiert ist
+if ! command -v zip &> /dev/null; then
+  echo "zip ist nicht installiert. Verwende tar stattdessen..."
+  # ZIP-Archiv mit tar erstellen
+  echo "Erstelle Archiv mit tar..."
+  cd "$TEMP_DIR"
+  ARCHIVE_NAME="besuchererfassungssystem.tar.gz"
+  tar -czvf "$CURRENT_DIR/$ARCHIVE_NAME" besuchererfassungssystem
+else
+  # ZIP-Archiv erstellen
+  echo "Erstelle ZIP-Archiv..."
+  cd "$TEMP_DIR"
+  zip -r "$CURRENT_DIR/$ARCHIVE_NAME" besuchererfassungssystem
+fi
 
 # Aufräumen
 rm -rf "$TEMP_DIR"
 
-echo -e "${GREEN}ZIP-Archiv erfolgreich erstellt:${NC} $CURRENT_DIR/$ARCHIVE_NAME"
-echo "Die ZIP-Datei kann nun auf einen Ubuntu-Server übertragen und mit 'sudo ./install.sh' installiert werden."
+echo -e "${GREEN}Archiv erfolgreich erstellt:${NC} $CURRENT_DIR/$ARCHIVE_NAME"
+echo "Das Archiv kann nun auf einen Ubuntu-Server übertragen und mit 'sudo ./install.sh' installiert werden."

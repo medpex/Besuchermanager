@@ -176,7 +176,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Mit korrektem Typen initialisieren
-      const locationStats: LocationStatsType = {};
+      let locationStats: LocationStatsType = {};
       
       for (const location of officeLocations) {
         // Weekday stats for this location
@@ -291,9 +291,8 @@ export function registerRoutes(app: Express): Server {
             EXTRACT(month FROM timestamp) ASC;
         `);
 
-        // TypeScript-sicheres Initialisieren des Objekts
-        if (!locationStats) locationStats = {};
-        locationStats[location as string] = {
+        // Füge die Daten dem locationStats-Objekt hinzu
+        locationStats[location] = {
           weekday: locationWeekdayStats.rows,
           timeInterval: locationTimeIntervalStats.rows,
           month: locationMonthlyStats.rows,
@@ -362,9 +361,17 @@ export function registerRoutes(app: Express): Server {
         GROUP BY created_by
       `);
 
-      const visitCountMap = new Map(
-        visitCounts.rows.map(row => [row.created_by, parseInt(row.visit_count)])
-      );
+      const visitCountMap = new Map<number, number>();
+      
+      visitCounts.rows.forEach(row => {
+        if (row.created_by !== null && row.visit_count !== null) {
+          const userId = Number(row.created_by);
+          const count = parseInt(String(row.visit_count));
+          if (!isNaN(userId) && !isNaN(count)) {
+            visitCountMap.set(userId, count);
+          }
+        }
+      });
 
       const usersWithVisits = allUsers.map(user => ({
         ...user,

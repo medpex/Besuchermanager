@@ -33,7 +33,7 @@ echo ""
 # Optionen anzeigen
 echo "Bitte wählen Sie eine Option:"
 echo ""
-echo "1) ZIP-Archiv für Ubuntu-Server erstellen"
+echo "1) Installationspaket für Ubuntu-Server erstellen"
 echo "2) Lokal auf diesem System installieren (benötigt sudo)"
 echo "3) Beenden"
 echo ""
