@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-# Modifiziere die auth.ts-Datei, um sichere Cookies zu deaktivieren
-sed -i 's/secure: true/secure: process.env.COOKIE_SECURE === "false" ? false : true/' /app/server/auth.ts
+# Optimiere Cookie-Einstellungen für Docker
+node session-fix.js
 
-# Die ursprüngliche CMD ausführen
+# Starte den Server
 exec "$@"

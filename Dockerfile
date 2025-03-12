@@ -21,10 +21,9 @@ ENV COOKIE_SECURE=false
 ENV COOKIE_SAMESITE=lax
 ENV SESSION_SECRET=supersecretkey123
 
-# Kopieren und ausführbar machen des Entrypoints
-COPY docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
+# Der Entrypoint ist bereits kopiert und muss nur ausführbar gemacht werden
+RUN chmod +x /app/docker-entrypoint.sh
 
 # Entrypoint und Startkommando
-ENTRYPOINT ["/docker-entrypoint.sh"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["node", "dist/index.js"]

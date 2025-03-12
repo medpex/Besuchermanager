@@ -1,17 +1,50 @@
+# Node-Standarddateien
 node_modules
 npm-debug.log
-.git
-.github
-.gitignore
-Dockerfile
-docker-compose.yml
+.npm
+
+# Vite und Builds
 dist
-README.md
-.env
-.env.local
-.env.development
-.env.test
-.env.production
-.DS_Store
+dist-ssr
+*.local
+.vite
+
+# Editor Verzeichnisse und Dateien
 .vscode
 .idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+
+# Temporäre Dateien
+*.log
+logs
+tmp
+temp
+
+# Docker-spezifisch
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+# Git
+.git
+.gitignore
+
+# Umgebungsvariablen (nicht im Docker-Image benötigt)
+.env
+.env.*
+!.env.example
+!.docker.env
+
+# Datenbank
+postgres_data
+
+# Sonstige Dateien, die nicht im Container benötigt werden
+README.md
+LICENSE
+*.md
+!

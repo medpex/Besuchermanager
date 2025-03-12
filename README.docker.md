@@ -1,91 +1,94 @@
-# Docker Installation - Besuchererfassungssystem
+# Docker-Konfiguration für das Besuchererfassungssystem
+
+Dieses Dokument beschreibt die Docker-Konfiguration für das Besuchererfassungssystem und wie Sie es in einer Docker-Umgebung ausführen können.
 
 ## Voraussetzungen
-- Docker
-- Docker Compose
 
-## Installation
+- Docker und Docker Compose müssen auf Ihrem System installiert sein
+- Grundlegende Kenntnisse der Befehlszeile
 
-1. Projekt-ZIP entpacken:
-```bash
-unzip besuchererfassung.zip
-cd besuchererfassung
-```
+## Schnellstart
 
-2. Setup-Skript ausführen (empfohlen):
-```bash
-chmod +x setup.sh
-./setup.sh
-```
+1. Klonen Sie das Repository und navigieren Sie zum Projektverzeichnis
 
-ODER
+2. Starten Sie die Container mit Docker Compose:
+   ```bash
+   docker-compose up -d
+   ```
 
-3. Docker-Container manuell bauen und starten:
-```bash
-docker-compose up -d
-```
+3. Die Anwendung ist nun unter http://localhost:5000 verfügbar
 
-4. Manuelle Datenbank-Initialisierung:
-```bash
-docker-compose exec app npm run db:push
-docker-compose exec app node db-init.js
-docker-compose exec app node scripts/create_admin.ts
-```
+4. Um die Container zu stoppen:
+   ```bash
+   docker-compose down
+   ```
 
-## Zugangsdaten
+## Anmeldeinformationen
 
-### Anwendung
-- URL: http://localhost:5000
-- Admin Benutzer: admin/J123654789j
-- Normaler Benutzer: benutzer/user123
+Die Anwendung wird mit zwei vordefinierten Benutzerkonten eingerichtet:
 
-### Datenbank
-- Host: localhost
-- Port: 5432
-- Datenbank: besucherdb
-- Benutzer: postgres
-- Passwort: postgres
+- Admin-Konto:
+  - Benutzername: admin
+  - Passwort: J123654789j
 
-## Container verwalten
+- Standardbenutzer-Konto:
+  - Benutzername: benutzer
+  - Passwort: user123
 
-- Container stoppen: `docker-compose stop`
-- Container starten: `docker-compose start`
-- Container neustarten: `docker-compose restart`
-- Container und Daten löschen: `docker-compose down -v`
-- Logs anzeigen: `docker-compose logs -f`
+## Datenbank
 
-## Datenbank-Backup
+Die PostgreSQL-Datenbank wird automatisch mit den erforderlichen Tabellen und Beispieldaten initialisiert. Die Datenbankdaten werden in einem Docker-Volume gespeichert, sodass sie zwischen Container-Neustarts bestehen bleiben.
 
-Backup erstellen:
-```bash
-docker-compose exec db pg_dump -U postgres besucherdb > backup.sql
-```
+## Container-Struktur
 
-Backup einspielen:
-```bash
-cat backup.sql | docker-compose exec -T db psql -U postgres besucherdb
-```
+Das System besteht aus zwei Containern:
 
-## Fehlersuche
+1. **app**: Node.js-Anwendung, die sowohl den Backend-Server als auch das Frontend ausführt.
+   - Port: 5000 (extern zugänglich)
 
-Überprüfen der Logs der Anwendung:
-```bash
-docker-compose logs -f app
-```
+2. **db**: PostgreSQL-Datenbank
+   - Port: 5432 (intern)
+   - Benutzername: postgres
+   - Passwort: postgres
+   - Datenbank: visitor_tracking
 
-Überprüfen der Logs der Datenbank:
-```bash
-docker-compose logs -f db
-```
+## Umgebungsvariablen
 
-Neustart der Container:
-```bash
-docker-compose restart
-```
+Die Anwendung verwendet folgende Umgebungsvariablen, die in der docker-compose.yml und Dockerfile definiert sind:
 
-Vollständig entfernen und neu starten (Daten werden gelöscht):
-```bash
-docker-compose down -v
-docker-compose up -d
-./setup.sh
-```
+- `NODE_ENV`: Laufzeitumgebung (auf 'production' gesetzt)
+- `DATABASE_URL`: Verbindungszeichenfolge für die Datenbank
+- `SESSION_SECRET`: Geheimnis für die Sitzungsverschlüsselung
+- `COOKIE_SECURE`: Cookie-Sicherheitseinstellung (auf 'false' gesetzt für HTTP)
+- `COOKIE_SAMESITE`: Same-Site-Cookie-Einstellung (auf 'lax' gesetzt)
+
+## Fehlerbehebung
+
+### Die Anwendung ist nicht erreichbar
+
+1. Überprüfen Sie, ob die Container laufen:
+   ```bash
+   docker-compose ps
+   ```
+
+2. Prüfen Sie die Logs auf Fehler:
+   ```bash
+   docker-compose logs
+   ```
+
+### Datenbankverbindungsprobleme
+
+1. Vergewissern Sie sich, dass der Datenbankcontainer läuft:
+   ```bash
+   docker-compose ps db
+   ```
+
+2. Prüfen Sie die Datenbankverbindungseinstellungen in der docker-compose.yml
+
+### Sessionprobleme bei der Anmeldung
+
+Die Docker-Konfiguration ist so eingerichtet, dass Cookies für HTTP-Umgebungen funktionieren. Wenn Sie Probleme bei der Anmeldung haben:
+
+1. Löschen Sie Ihre Browser-Cookies für die Seite
+2. Stellen Sie sicher, dass Ihr Browser Drittanbieter-Cookies akzeptiert
+3. Überprüfen Sie die Docker-Logs auf session-bezogene Fehler

@@ -6,7 +6,16 @@ import { visits, users } from "@db/schema";
 import { desc, sql } from "drizzle-orm";
 import { hashPassword } from "./utils/crypto";
 
+// Health check endpoint für Docker
+export function registerHealthCheck(app: Express) {
+  app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+}
+
 export function registerRoutes(app: Express): Server {
+  // Zuerst Health Check registrieren
+  registerHealthCheck(app);
   setupAuth(app);
 
   app.post("/api/visits", async (req, res) => {
