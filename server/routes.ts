@@ -32,7 +32,8 @@ export function registerRoutes(app: Express): Server {
     }
 
     try {
-      const results = await db.select().from(visits).orderBy(desc(visits.timestamp)).limit(100);
+      // Entferne die Begrenzung auf 100 Einträge, um alle Besuche zu erhalten
+      const results = await db.select().from(visits).orderBy(desc(visits.timestamp));
       res.json(results);
     } catch (error) {
       console.error("Failed to fetch visits:", error);
