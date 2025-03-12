@@ -280,7 +280,9 @@ export function registerRoutes(app: Express): Server {
             EXTRACT(month FROM timestamp) ASC;
         `);
 
-        locationStats[location] = {
+        // TypeScript-sicheres Initialisieren des Objekts
+        if (!locationStats) locationStats = {};
+        locationStats[location as string] = {
           weekday: locationWeekdayStats.rows,
           timeInterval: locationTimeIntervalStats.rows,
           month: locationMonthlyStats.rows,
@@ -290,7 +292,7 @@ export function registerRoutes(app: Express): Server {
 
       // Transform data for frontend
       const transformData = (rows: any[]) => {
-        const result = {};
+        const result: Record<string, Record<string, any>> = {};
 
         // First pass: collect all unique years
         const years = new Set<string>();

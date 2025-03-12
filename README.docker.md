@@ -1,94 +1,114 @@
-# Docker-Konfiguration für das Besuchererfassungssystem
+# Dockerisiertes Besuchererfassungssystem
 
-Dieses Dokument beschreibt die Docker-Konfiguration für das Besuchererfassungssystem und wie Sie es in einer Docker-Umgebung ausführen können.
+Dieses Dokument beschreibt, wie Sie das Besuchererfassungssystem mit Docker betreiben können.
 
 ## Voraussetzungen
 
-- Docker und Docker Compose müssen auf Ihrem System installiert sein
-- Grundlegende Kenntnisse der Befehlszeile
+- Docker und Docker Compose installiert
+- Mindestens 1 GB RAM für Container
+- 1 GB freier Speicherplatz
+- Internetzugang für den ersten Build (zum Herunterladen der Images)
 
 ## Schnellstart
 
-1. Klonen Sie das Repository und navigieren Sie zum Projektverzeichnis
+Das beiliegende Installationsskript führt alle notwendigen Schritte aus:
 
-2. Starten Sie die Container mit Docker Compose:
-   ```bash
-   docker-compose up -d
-   ```
+```bash
+chmod +x install.sh
+./install.sh
+```
 
-3. Die Anwendung ist nun unter http://localhost:5000 verfügbar
+Nach erfolgreicher Installation ist die Anwendung unter http://localhost:5000 erreichbar.
 
-4. Um die Container zu stoppen:
-   ```bash
-   docker-compose down
-   ```
+## Manuelle Installation
 
-## Anmeldeinformationen
+Wenn Sie die Anwendung manuell installieren möchten, folgen Sie diesen Schritten:
 
-Die Anwendung wird mit zwei vordefinierten Benutzerkonten eingerichtet:
+1. Stellen Sie sicher, dass Docker und Docker Compose installiert sind
+2. Klonen oder extrahieren Sie die Projektdateien
+3. Navigieren Sie zum Projektverzeichnis
+4. Führen Sie folgenden Befehl aus:
 
-- Admin-Konto:
-  - Benutzername: admin
-  - Passwort: J123654789j
+```bash
+docker-compose up -d
+```
 
-- Standardbenutzer-Konto:
-  - Benutzername: benutzer
-  - Passwort: user123
+## Zugangsdaten
+
+Nach der Installation können Sie sich mit folgenden Zugangsdaten anmelden:
+
+- Admin-Benutzer:
+  - Benutzername: `admin`
+  - Passwort: `J123654789j`
+
+- Normaler Benutzer:
+  - Benutzername: `benutzer`
+  - Passwort: `user123`
+
+## Konfiguration
+
+Die Anwendung kann über Umgebungsvariablen in der `.docker.env`-Datei konfiguriert werden. 
+Die wichtigsten Einstellungen:
+
+- `PORT`: Port, auf dem die Anwendung läuft (Standard: 5000)
+- `DB_HOST`: Hostname der Datenbank (Standard: db)
+- `DB_USER`, `DB_PASSWORD`: Datenbankzugangsdaten
+- `DB_NAME`: Name der Datenbank
+- `COOKIE_SECURE`: Ob Cookies nur über HTTPS übertragen werden (Standard: false für Docker)
+- `COOKIE_SAME_SITE`: Cookie-SameSite-Einstellung (Standard: lax für Docker)
 
 ## Datenbank
 
-Die PostgreSQL-Datenbank wird automatisch mit den erforderlichen Tabellen und Beispieldaten initialisiert. Die Datenbankdaten werden in einem Docker-Volume gespeichert, sodass sie zwischen Container-Neustarts bestehen bleiben.
+Die PostgreSQL-Datenbank wird automatisch eingerichtet und mit Beispieldaten befüllt. Die Daten werden in einem Docker-Volume persistent gespeichert.
 
-## Container-Struktur
+Um die Datenbank zurückzusetzen:
 
-Das System besteht aus zwei Containern:
+```bash
+docker-compose down -v
+docker-compose up -d
+```
 
-1. **app**: Node.js-Anwendung, die sowohl den Backend-Server als auch das Frontend ausführt.
-   - Port: 5000 (extern zugänglich)
+## Wartung und Verwaltung
 
-2. **db**: PostgreSQL-Datenbank
-   - Port: 5432 (intern)
-   - Benutzername: postgres
-   - Passwort: postgres
-   - Datenbank: visitor_tracking
+### Container verwalten
 
-## Umgebungsvariablen
+- Container starten: `docker-compose up -d`
+- Container stoppen: `docker-compose down` (Daten bleiben erhalten)
+- Logs anzeigen: `docker-compose logs -f`
+- Status prüfen: `docker-compose ps`
 
-Die Anwendung verwendet folgende Umgebungsvariablen, die in der docker-compose.yml und Dockerfile definiert sind:
+### Updates
 
-- `NODE_ENV`: Laufzeitumgebung (auf 'production' gesetzt)
-- `DATABASE_URL`: Verbindungszeichenfolge für die Datenbank
-- `SESSION_SECRET`: Geheimnis für die Sitzungsverschlüsselung
-- `COOKIE_SECURE`: Cookie-Sicherheitseinstellung (auf 'false' gesetzt für HTTP)
-- `COOKIE_SAMESITE`: Same-Site-Cookie-Einstellung (auf 'lax' gesetzt)
+Um die Anwendung zu aktualisieren, ziehen Sie die neuesten Änderungen und bauen die Container neu:
+
+```bash
+git pull  # oder neue Dateien herunterladen
+docker-compose build --no-cache
+docker-compose up -d
+```
 
 ## Fehlerbehebung
 
-### Die Anwendung ist nicht erreichbar
+### Anwendung ist nicht erreichbar
 
-1. Überprüfen Sie, ob die Container laufen:
-   ```bash
-   docker-compose ps
-   ```
+1. Prüfen Sie, ob die Container laufen: `docker-compose ps`
+2. Prüfen Sie die Logs: `docker-compose logs -f app`
+3. Stellen Sie sicher, dass Port 5000 nicht bereits verwendet wird
 
-2. Prüfen Sie die Logs auf Fehler:
-   ```bash
-   docker-compose logs
-   ```
+### Datenbank-Verbindungsprobleme
 
-### Datenbankverbindungsprobleme
+1. Prüfen Sie die Datenbank-Logs: `docker-compose logs -f db`
+2. Stellen Sie sicher, dass die Datenbank läuft: `docker-compose ps`
+3. Überprüfen Sie die Umgebungsvariablen in `.docker.env`
 
-1. Vergewissern Sie sich, dass der Datenbankcontainer läuft:
-   ```bash
-   docker-compose ps db
-   ```
+## Sicherheitshinweise
 
-2. Prüfen Sie die Datenbankverbindungseinstellungen in der docker-compose.yml
+- Ändern Sie die Standard-Zugangsdaten nach der ersten Anmeldung
+- Für Produktionsumgebungen sollten Sie die Docker-Konfiguration anpassen:
+  - Verwenden Sie sichere Passwörter für die Datenbank
+  - Aktivieren Sie HTTPS mit einem gültigen Zertifikat
+  - Beschränken Sie die Ports, die nach außen freigegeben werden
 
-### Sessionprobleme bei der Anmeldung
+## Support
 
-Die Docker-Konfiguration ist so eingerichtet, dass Cookies für HTTP-Umgebungen funktionieren. Wenn Sie Probleme bei der Anmeldung haben:
-
-1. Löschen Sie Ihre Browser-Cookies für die Seite
-2. Stellen Sie sicher, dass Ihr Browser Drittanbieter-Cookies akzeptiert
-3. Überprüfen Sie die Docker-Logs auf session-bezogene Fehler
+Bei Fragen oder Problemen wenden Sie sich bitte an den Support oder erstellen Sie ein Issue im Repository.
