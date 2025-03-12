@@ -181,7 +181,7 @@ export default function VisitorForm() {
         </div>
       </div>
 
-      <div className="grid gap-6">
+      <div className="grid grid-cols-3 gap-4">
         {/* Media Section - Purple */}
         <div className="space-y-2">
           {categories.Media.map((subcategory) => (
