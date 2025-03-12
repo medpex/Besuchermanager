@@ -2,18 +2,21 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Installiere Dependencies
+# Installieren der Abhängigkeiten
 COPY package*.json ./
 RUN npm install
 
-# Kopiere den Rest des Projekts
+# Kopieren des Projektcodes
 COPY . .
 
-# Baue das Projekt
+# Build der Anwendung
 RUN npm run build
 
-# Exponiere den Port
+# Port freigeben
 EXPOSE 5000
 
-# Starte die Anwendung
-CMD ["npm", "start"]
+# Umgebungsvariable für Produktion
+ENV NODE_ENV=production
+
+# Startkommando
+CMD ["node", "dist/index.js"]
