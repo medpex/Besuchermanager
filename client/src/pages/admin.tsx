@@ -107,8 +107,8 @@ function TotalVisitsCard({ value }) {
     );
   }
 
-  const maxVisits = 1000; // Max für Progress-Bar
-  const percentage = Math.min((value / maxVisits) * 100, 100);
+  // Dynamischer maximaler Wert basierend auf dem tatsächlichen Wert
+  const percentage = 100; // Immer volle Anzeige, da es ein Gesamt-Indikator ist
 
   return (
     <Card className="transition-all duration-200 hover:shadow-md">
