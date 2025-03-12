@@ -41,7 +41,7 @@ read -p "Ihre Wahl (1-3): " choice
 
 case $choice in
   1)
-    log_info "Erstelle ZIP-Archiv..."
+    log_info "Erstelle Installationspaket..."
     if [ ! -f "create_zip.sh" ]; then
       log_error "create_zip.sh nicht gefunden!"
       exit 1

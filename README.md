@@ -1,92 +1,94 @@
 # Besuchererfassungssystem
 
-Ein fortschrittliches Besuchererfassungs- und Analysetool für Kundenservice-Büros mit nutzerzentrierter Persistenz und dynamischer Datenvisualisierung.
+Ein umfassendes Besuchererfassungssystem für Kundendienst-Umgebungen, mit Fokus auf benutzerfreundliche Datenverwaltung und dynamische Visualisierung.
 
-## Technologiestack:
-- TypeScript Full-Stack Entwicklung
-- Moderne Authentifizierungsmechanismen
-- Benutzer-spezifische Datenpersistenz
-- Flexible Datenbank-Integration
-- Rollenbasierte Zugriffskontrollen
-- Detaillierte Besucherstatistik-Analyse
+## Funktionen
 
-## Installation mit Docker
+- **Benutzerauthentifizierung**: Sicheres Anmeldesystem mit Benutzerrollen (Admin/Benutzer)
+- **Besuchererfassung**: Einfache Erfassung von Besucherdaten mit Kategorien und Standorten
+- **Umfassende Statistiken**: Graphische Auswertungen nach Kategorien, Zeiträumen und Standorten
+- **Responsive Design**: Optimierte Darstellung auf allen Geräten
+- **Datenpersistenz**: Zuverlässige Speicherung aller Daten in einer PostgreSQL-Datenbank
 
-### Voraussetzungen
-- Docker
-- Docker Compose
+## Technologie-Stack
 
-### Installationsschritte
+- **Frontend**: React mit TypeScript, Tailwind CSS, shadcn/ui
+- **Backend**: Node.js mit Express
+- **Datenbank**: PostgreSQL mit Drizzle ORM
+- **Authentifizierung**: Passport.js mit sicherer Passwort-Verschlüsselung
 
-1. Laden Sie das Projekt-ZIP herunter und entpacken Sie es auf Ihrem Server
+## Installation
 
-2. Navigieren Sie zum Projektverzeichnis:
-   ```bash
-   cd pfad/zum/besuchererfassungssystem
-   ```
+### Automatische Installation
 
-3. Führen Sie das Setup-Skript aus:
-   ```bash
-   chmod +x setup.sh
-   ./setup.sh
-   ```
+Das Projekt enthält ein Setup-Skript für einfache Installation und Paketerstellung:
 
-   Dieses Skript:
-   - Startet die Docker-Container (Webanwendung und Datenbank)
-   - Initialisiert die Datenbankstruktur
-   - Erstellt einen Admin-Benutzer
-
-4. Öffnen Sie einen Webbrowser und navigieren Sie zu:
-   ```
-   http://ihr-server:5000
-   ```
-
-### Admin-Login
-- Benutzername: `admin`
-- Passwort: `admin123`
-
-**Wichtig:** Bitte ändern Sie das Admin-Passwort nach dem ersten Login.
-
-## Manuelle Installation (ohne Setup-Skript)
-
-Falls Sie die Anwendung manuell installieren möchten:
-
-1. Starten Sie die Docker-Container:
-   ```bash
-   docker-compose up -d
-   ```
-
-2. Initialisieren Sie die Datenbank:
-   ```bash
-   docker-compose exec app npm run db:push
-   ```
-
-3. Erstellen Sie einen Admin-Benutzer:
-   ```bash
-   docker-compose exec app node scripts/create_admin.ts
-   ```
-
-## Fehlerbehebung
-
-- **Problem**: Container starten nicht
-  **Lösung**: Überprüfen Sie, ob die Ports 5000 und 5432 verfügbar sind
-
-- **Problem**: Datenbank-Verbindungsfehler
-  **Lösung**: Stellen Sie sicher, dass die Umgebungsvariable DATABASE_URL korrekt ist
-
-- **Problem**: Admin-Benutzer kann nicht erstellt werden
-  **Lösung**: Überprüfen Sie die Logs mit `docker-compose logs app`
-
-## Sicherung und Wiederherstellung
-
-Die Postgres-Daten werden im Docker-Volume `postgres_data` gespeichert.
-
-Sicherung:
 ```bash
-docker-compose exec db pg_dump -U postgres besucherdb > backup.sql
+chmod +x setup.sh
+./setup.sh
 ```
 
-Wiederherstellung:
-```bash
-cat backup.sql | docker-compose exec -T db psql -U postgres besucherdb
-```
+Das Setup-Skript bietet folgende Optionen:
+1. Erstellen eines Installationspakets für Ubuntu-Server
+2. Lokale Installation auf dem aktuellen System
+3. Beenden
+
+### Manuelle Installation auf Ubuntu-Server
+
+1. Stellen Sie sicher, dass PostgreSQL installiert ist:
+   ```bash
+   sudo apt-get update
+   sudo apt-get install postgresql postgresql-contrib
+   ```
+
+2. Klonen Sie das Repository oder entpacken Sie das Installationspaket:
+   ```bash
+   tar -xzvf besuchererfassungssystem.tar.gz
+   cd besuchererfassungssystem
+   ```
+
+3. Führen Sie das Installations-Skript aus:
+   ```bash
+   chmod +x install.sh
+   sudo ./install.sh
+   ```
+
+### Zugangsdaten nach Installation
+
+- URL: http://[server-ip]:5000
+- Benutzername: admin
+- Passwort: admin
+
+## Systemverwaltung
+
+- Start: `sudo systemctl start besuchererfassung`
+- Stop: `sudo systemctl stop besuchererfassung`
+- Neustart: `sudo systemctl restart besuchererfassung`
+- Status: `sudo systemctl status besuchererfassung`
+- Logs: `sudo journalctl -u besuchererfassung -f`
+
+## Entwicklung
+
+Für die lokale Entwicklung:
+
+1. Datenbank einrichten:
+   ```bash
+   sudo -u postgres psql -c "CREATE USER besucherapp WITH PASSWORD 'besucherapp123';"
+   sudo -u postgres psql -c "CREATE DATABASE besucherdb OWNER besucherapp;"
+   sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE besucherdb TO besucherapp;"
+   sudo -u postgres psql -d besucherdb -f init.sql
+   ```
+
+2. Abhängigkeiten installieren:
+   ```bash
+   npm ci
+   ```
+
+3. Entwicklungsserver starten:
+   ```bash
+   npm run dev
+   ```
+
+## Lizenz
+
+© 2025 - Alle Rechte vorbehalten
