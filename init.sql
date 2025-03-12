@@ -1,5 +1,5 @@
--- Initialisierungsskript für die PostgreSQL-Datenbank im Docker-Container
--- Dieses Skript wird beim ersten Start des Containers automatisch ausgeführt
+-- Initialisierungsskript für die PostgreSQL-Datenbank des Besuchererfassungssystems
+-- Dieses Skript wird während der Installation ausgeführt, um die Datenbankstruktur zu erstellen
 
 -- Tabellen erstellen
 CREATE TABLE IF NOT EXISTS users (

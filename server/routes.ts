@@ -165,7 +165,18 @@ export function registerRoutes(app: Express): Server {
       // Daten für die Standorte einzeln
       const officeLocations = ["Geesthacht", "Büchen", "Schwarzenbek"];
       
-      const locationStats = {};
+      // Interface für die Statistikdaten
+      interface LocationStatsType {
+        [location: string]: {
+          weekday: any[];
+          timeInterval: any[];
+          month: any[];
+          categoryData: any[];
+        }
+      }
+      
+      // Mit korrektem Typen initialisieren
+      const locationStats: LocationStatsType = {};
       
       for (const location of officeLocations) {
         // Weekday stats for this location
