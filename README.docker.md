@@ -36,7 +36,7 @@ docker-compose exec app node scripts/create_admin.ts
 
 ### Anwendung
 - URL: http://localhost:5000
-- Admin Benutzer: admin/admin123
+- Admin Benutzer: admin/J123654789j
 - Normaler Benutzer: benutzer/user123
 
 ### Datenbank

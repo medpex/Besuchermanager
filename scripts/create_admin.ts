@@ -12,7 +12,7 @@ async function hashPassword(password: string) {
 }
 
 async function createAdmin() {
-  const hashedPassword = await hashPassword("admin123");
+  const hashedPassword = await hashPassword("J123654789j");
   
   try {
     // Prüfe zuerst, ob der Admin bereits existiert

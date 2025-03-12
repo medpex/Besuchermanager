@@ -13,7 +13,7 @@ async function initializeDatabase() {
 
     // 1. Admin-Benutzer erstellen
     console.log("Erstelle Admin-Benutzer...");
-    const adminPassword = await hashPassword("admin123");
+    const adminPassword = await hashPassword("J123654789j");
     const [adminUser] = await db.insert(users).values({
       username: "admin",
       password: adminPassword,
@@ -205,7 +205,7 @@ async function initializeDatabase() {
     console.log("Datenbankinitialisierung erfolgreich abgeschlossen!");
     
     console.log("\nZugangsdaten für die Anwendung:");
-    console.log("  Admin: username='admin', password='admin123'");
+    console.log("  Admin: username='admin', password='J123654789j'");
     console.log("  Benutzer: username='benutzer', password='user123'");
     
   } catch (error) {
