@@ -17,9 +17,49 @@ Ein umfassendes Besuchererfassungssystem für Kundendienst-Umgebungen, mit Fokus
 - **Datenbank**: PostgreSQL mit Drizzle ORM
 - **Authentifizierung**: Passport.js mit sicherer Passwort-Verschlüsselung
 
-## Installation
+## Installation mit Docker
 
-### Automatische Installation
+Das Projekt kann komplett mit Docker und Docker Compose betrieben werden. Damit ist keine manuelle Installation von Node.js oder PostgreSQL notwendig.
+
+### Voraussetzungen
+- [Docker](https://www.docker.com/get-started) und [Docker Compose](https://docs.docker.com/compose/) müssen installiert sein.
+
+### Starten der Anwendung
+
+1. Repository klonen:
+   ```bash
+   git clone https://github.com/medpex/Besuchermanager.git
+   cd Besuchermanager
+   ```
+2. Container bauen und starten:
+   ```bash
+   docker-compose build --no-cache
+   docker-compose up -d
+   ```
+3. Die Anwendung ist erreichbar unter:
+   - http://localhost:5050
+
+### Zugangsdaten (Standard)
+- Benutzername: admin
+- Passwort: J123654789j
+- Benutzername: benutzer
+- Passwort: user123
+
+### Container stoppen
+```bash
+docker-compose down
+```
+
+### Logs anzeigen
+```bash
+docker-compose logs -f
+```
+
+### Hinweise
+- Die Datenbankdaten werden im Volume `db-data` persistent gespeichert.
+- Änderungen am Code erfordern einen erneuten Build (`docker-compose build`).
+
+## Automatische Installation
 
 Das Projekt enthält ein Setup-Skript für einfache Installation und Paketerstellung:
 
