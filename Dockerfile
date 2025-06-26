@@ -3,7 +3,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Umgebungsvariablen setzen
-ENV NODE_ENV=production
+ENV NODE_ENV=development
 ENV PORT=5000
 
 # Paket- und Konfigurationsdateien kopieren
@@ -15,7 +15,10 @@ COPY postcss.config.js ./
 COPY drizzle.config.ts ./
 COPY theme.json ./
 
-# Dependencies installieren
+# Build-Tools global installieren
+RUN npm install -g vite esbuild
+
+# Dependencies inkl. devDependencies installieren
 RUN npm ci
 
 # Quellcode kopieren
@@ -25,6 +28,9 @@ COPY db/ ./db/
 
 # Build ausführen
 RUN npm run build
+
+# Production-Umgebung für den Start
+ENV NODE_ENV=production
 
 # Anwendung starten
 EXPOSE 5000

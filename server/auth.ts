@@ -160,3 +160,10 @@ export function setupAuth(app: Express) {
     res.status(401).send("Not logged in");
   });
 }
+
+export function requireAdmin(req: any, res: any, next: any) {
+  if (!req.isAuthenticated() || !req.user.isAdmin) {
+    return res.status(403).send("Forbidden");
+  }
+  next();
+}

@@ -1,10 +1,19 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { setupAuth } from "./auth";
+import { setupAuth, requireAdmin } from "./auth";
 import { db } from "@db";
 import { visits, users } from "@db/schema";
 import { desc, sql } from "drizzle-orm";
 import { hashPassword } from "./utils/crypto";
+import { eq } from "drizzle-orm";
+import { verifyPassword } from "./utils/crypto";
+import multer from "multer";
+import { parse } from "csv-parse";
+import fs from "fs";
+import path from "path";
+
+// Configure multer for file upload
+const upload = multer({ dest: 'uploads/' });
 
 // Health check endpoint für Systemüberwachung
 export function registerHealthCheck(app: Express) {
@@ -93,17 +102,36 @@ export function registerRoutes(app: Express): Server {
           SELECT 
             timestamp,
             CASE 
-              WHEN EXTRACT(HOUR FROM timestamp) < 10 THEN '08:00-10:00'
-              WHEN EXTRACT(HOUR FROM timestamp) < 12 THEN '10:00-12:00'
-              WHEN EXTRACT(HOUR FROM timestamp) < 14 THEN '12:00-14:00'
-              WHEN EXTRACT(HOUR FROM timestamp) < 16 THEN '14:00-16:00'
-              ELSE '16:00-18:00'
+              WHEN EXTRACT(HOUR FROM timestamp) = 8 THEN '08:00-09:00'
+              WHEN EXTRACT(HOUR FROM timestamp) = 9 THEN '09:00-10:00'
+              WHEN EXTRACT(HOUR FROM timestamp) = 10 THEN '10:00-11:00'
+              WHEN EXTRACT(HOUR FROM timestamp) = 11 THEN '11:00-12:00'
+              WHEN EXTRACT(HOUR FROM timestamp) = 12 THEN '12:00-13:00'
+              WHEN EXTRACT(HOUR FROM timestamp) = 13 THEN '13:00-14:00'
+              WHEN EXTRACT(HOUR FROM timestamp) = 14 THEN '14:00-15:00'
+              WHEN EXTRACT(HOUR FROM timestamp) = 15 THEN '15:00-16:00'
+              WHEN EXTRACT(HOUR FROM timestamp) = 16 THEN '16:00-17:00'
+              WHEN EXTRACT(HOUR FROM timestamp) = 17 THEN '17:00-18:00'
+              ELSE 'Andere Zeit'
             END as time_bucket
           FROM visits
         ) subquery
         WHERE date_part('year', timestamp)::text IN (SELECT year FROM visit_years)
         GROUP BY time_bucket, date_part('year', timestamp)::text
-        ORDER BY time_bucket;
+        ORDER BY 
+          CASE 
+            WHEN time_bucket = '08:00-09:00' THEN 1
+            WHEN time_bucket = '09:00-10:00' THEN 2
+            WHEN time_bucket = '10:00-11:00' THEN 3
+            WHEN time_bucket = '11:00-12:00' THEN 4
+            WHEN time_bucket = '12:00-13:00' THEN 5
+            WHEN time_bucket = '13:00-14:00' THEN 6
+            WHEN time_bucket = '14:00-15:00' THEN 7
+            WHEN time_bucket = '15:00-16:00' THEN 8
+            WHEN time_bucket = '16:00-17:00' THEN 9
+            WHEN time_bucket = '17:00-18:00' THEN 10
+            ELSE 11
+          END;
       `);
 
       // Monthly stats
@@ -220,18 +248,37 @@ export function registerRoutes(app: Express): Server {
             SELECT 
               timestamp,
               CASE 
-                WHEN EXTRACT(HOUR FROM timestamp) < 10 THEN '08:00-10:00'
-                WHEN EXTRACT(HOUR FROM timestamp) < 12 THEN '10:00-12:00'
-                WHEN EXTRACT(HOUR FROM timestamp) < 14 THEN '12:00-14:00'
-                WHEN EXTRACT(HOUR FROM timestamp) < 16 THEN '14:00-16:00'
-                ELSE '16:00-18:00'
+                WHEN EXTRACT(HOUR FROM timestamp) = 8 THEN '08:00-09:00'
+                WHEN EXTRACT(HOUR FROM timestamp) = 9 THEN '09:00-10:00'
+                WHEN EXTRACT(HOUR FROM timestamp) = 10 THEN '10:00-11:00'
+                WHEN EXTRACT(HOUR FROM timestamp) = 11 THEN '11:00-12:00'
+                WHEN EXTRACT(HOUR FROM timestamp) = 12 THEN '12:00-13:00'
+                WHEN EXTRACT(HOUR FROM timestamp) = 13 THEN '13:00-14:00'
+                WHEN EXTRACT(HOUR FROM timestamp) = 14 THEN '14:00-15:00'
+                WHEN EXTRACT(HOUR FROM timestamp) = 15 THEN '15:00-16:00'
+                WHEN EXTRACT(HOUR FROM timestamp) = 16 THEN '16:00-17:00'
+                WHEN EXTRACT(HOUR FROM timestamp) = 17 THEN '17:00-18:00'
+                ELSE 'Andere Zeit'
               END as time_bucket
             FROM visits
             WHERE office_location = ${location}
           ) subquery
           WHERE date_part('year', timestamp)::text IN (SELECT year FROM visit_years)
           GROUP BY time_bucket, date_part('year', timestamp)::text
-          ORDER BY time_bucket;
+          ORDER BY 
+            CASE 
+              WHEN time_bucket = '08:00-09:00' THEN 1
+              WHEN time_bucket = '09:00-10:00' THEN 2
+              WHEN time_bucket = '10:00-11:00' THEN 3
+              WHEN time_bucket = '11:00-12:00' THEN 4
+              WHEN time_bucket = '12:00-13:00' THEN 5
+              WHEN time_bucket = '13:00-14:00' THEN 6
+              WHEN time_bucket = '14:00-15:00' THEN 7
+              WHEN time_bucket = '15:00-16:00' THEN 8
+              WHEN time_bucket = '16:00-17:00' THEN 9
+              WHEN time_bucket = '17:00-18:00' THEN 10
+              ELSE 11
+            END;
         `);
 
         // Monthly stats for this location
@@ -347,6 +394,66 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Speichern nicht, aber zugreifen ja
+  app.get("/api/analytics/clicks", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(403).send("Forbidden");
+    }
+
+    try {
+      // Da 'clicks' nicht definiert ist, ersetzen wir es durch eine leere Array-Antwort
+      // bis das richtige Datenmodell implementiert ist
+      res.json([]);
+    } catch (error) {
+      console.error('Clicks fetch error:', error);
+      res.status(500).send("Failed to fetch clicks");
+    }
+  });
+
+  // Change own password (for all authenticated users)
+  app.post("/api/user/change-password", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Nicht eingeloggt");
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).send("Aktuelles und neues Passwort erforderlich");
+    }
+
+    try {
+      // Verify current password
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, req.user.id))
+        .limit(1);
+
+      if (!user) {
+        return res.status(404).send("Benutzer nicht gefunden");
+      }
+
+      const isMatch = await verifyPassword(user.password, currentPassword);
+      if (!isMatch) {
+        return res.status(400).send("Aktuelles Passwort ist falsch");
+      }
+
+      // Update to new password
+      const hashedPassword = await hashPassword(newPassword);
+      
+      await db
+        .update(users)
+        .set({ password: hashedPassword })
+        .where(eq(users.id, req.user.id));
+
+      res.json({ message: "Passwort erfolgreich geändert" });
+    } catch (error) {
+      console.error("Password change error:", error);
+      res.status(500).send("Fehler bei der Passwortänderung");
+    }
+  });
+
   // User management endpoints (admin only)
   app.get("/api/admin/users", async (req, res) => {
     if (!req.isAuthenticated() || !req.user.isAdmin) {
@@ -403,6 +510,195 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error("Failed to create user:", error);
       res.status(500).send("Failed to create user");
+    }
+  });
+
+  // Update user (admin only)
+  app.patch("/api/admin/users/:id", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user.isAdmin) {
+      return res.status(403).send("Forbidden");
+    }
+
+    const userId = parseInt(req.params.id);
+    if (isNaN(userId)) {
+      return res.status(400).send("Invalid user ID");
+    }
+
+    try {
+      // Don't allow updating own admin status (prevent self-lockout)
+      if (userId === req.user.id && req.body.isAdmin === false) {
+        return res.status(400).send("Kann Administratorrechte nicht vom eigenen Konto entfernen");
+      }
+
+      // Prepare update data
+      const updateData: any = {};
+      
+      // Only update fields that are provided
+      if (req.body.username !== undefined) updateData.username = req.body.username;
+      if (req.body.isAdmin !== undefined) updateData.isAdmin = req.body.isAdmin;
+      
+      // If password is provided, hash it
+      if (req.body.password) {
+        updateData.password = await hashPassword(req.body.password);
+      }
+
+      const updatedUser = await db
+        .update(users)
+        .set(updateData)
+        .where(eq(users.id, userId))
+        .returning();
+
+      if (!updatedUser.length) {
+        return res.status(404).send("Benutzer nicht gefunden");
+      }
+
+      // Remove password from response
+      const { password, ...userWithoutPassword } = updatedUser[0];
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Failed to update user:", error);
+      res.status(500).send("Failed to update user");
+    }
+  });
+
+  // Delete user (admin only)
+  app.delete("/api/admin/users/:id", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user.isAdmin) {
+      return res.status(403).send("Forbidden");
+    }
+
+    const userId = parseInt(req.params.id);
+    if (isNaN(userId)) {
+      return res.status(400).send("Invalid user ID");
+    }
+
+    // Don't allow deleting own account
+    if (userId === req.user.id) {
+      return res.status(400).send("Kann eigenes Konto nicht löschen");
+    }
+
+    try {
+      const deletedUser = await db
+        .delete(users)
+        .where(eq(users.id, userId))
+        .returning();
+
+      if (!deletedUser.length) {
+        return res.status(404).send("Benutzer nicht gefunden");
+      }
+
+      res.json({ message: "Benutzer erfolgreich gelöscht" });
+    } catch (error) {
+      console.error("Failed to delete user:", error);
+      res.status(500).send("Failed to delete user");
+    }
+  });
+
+  // CSV Upload endpoint for importing old visitor data (admin only)
+  app.post("/api/admin/upload-csv", upload.single('file'), async (req, res) => {
+    if (!req.isAuthenticated() || !req.user.isAdmin) {
+      return res.status(403).send("Forbidden");
+    }
+
+    try {
+      if (!req.file) {
+        return res.status(400).send("No file uploaded");
+      }
+
+      // Speichere den Dateipfad, damit er später sicher verwendet werden kann
+      const filePath = req.file.path;
+      
+      const csvRecords: any[] = [];
+      const parser = fs.createReadStream(filePath)
+        .pipe(parse({
+          columns: true,
+          delimiter: ',',
+          trim: true,
+          skip_empty_lines: true
+        }));
+
+      parser.on('readable', async function() {
+        let record;
+        while ((record = parser.read()) !== null) {
+          csvRecords.push(record);
+        }
+      });
+
+      parser.on('error', function(err) {
+        console.error('CSV parsing error:', err);
+        res.status(500).send("Error parsing CSV file");
+      });
+
+      parser.on('end', async function() {
+        try {
+          const insertPromises = csvRecords.map(async (record) => {
+            // Validate required fields
+            if (!record.timestamp || !record.category || !record.subcategory || !record.office_location) {
+              return { success: false, error: "Missing required fields", record };
+            }
+
+            try {
+              // Validate timestamp format
+              const timestampDate = new Date(record.timestamp);
+              if (isNaN(timestampDate.getTime())) {
+                return { success: false, error: "Invalid timestamp format", record };
+              }
+
+              // Insert visit record
+              await db.insert(visits).values({
+                timestamp: timestampDate,
+                category: record.category,
+                subcategory: record.subcategory,
+                officeLocation: record.office_location,
+                createdBy: req.user.id // Default to current admin user
+              });
+              
+              return { success: true, record };
+            } catch (error) {
+              console.error("Error inserting visit:", error);
+              return { success: false, error: "Database error", record };
+            }
+          });
+
+          const processResults = await Promise.all(insertPromises);
+          
+          // Clean up the uploaded file
+          fs.unlinkSync(filePath);
+          
+          const successCount = processResults.filter(r => r.success).length;
+          const failedResults = processResults.filter(r => !r.success);
+
+          res.json({
+            success: true,
+            totalProcessed: processResults.length,
+            successCount,
+            failedCount: failedResults.length,
+            failedRecords: failedResults
+          });
+        } catch (error) {
+          console.error("Error processing CSV records:", error);
+          res.status(500).send("Error processing CSV records");
+        }
+      });
+    } catch (error) {
+      console.error("CSV upload error:", error);
+      res.status(500).send("Error uploading file");
+    }
+  });
+
+  // Route zum Leeren der Datenbank (nur für Admins)
+  app.post("/api/admin/clear-database", requireAdmin, async (req, res) => {
+    try {
+      // Lösche alle Besuche
+      await db.delete(visits);
+      
+      res.json({ success: true, message: "Datenbank wurde erfolgreich geleert" });
+    } catch (error) {
+      console.error("Fehler beim Leeren der Datenbank:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Fehler beim Leeren der Datenbank" 
+      });
     }
   });
 

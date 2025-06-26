@@ -9,6 +9,7 @@ import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import Dashboard from "@/pages/dashboard";
 import AdminPage from "@/pages/admin";
+import SettingsPage from "@/pages/settings";
 
 function ProtectedRoute({ component: Component, adminOnly = false }) {
   const { user } = useUser();
@@ -42,6 +43,7 @@ function Router() {
         <Route path="/" component={() => <ProtectedRoute component={Dashboard} />} />
         <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />
         <Route path="/admin" component={() => <ProtectedRoute component={AdminPage} adminOnly />} />
+        <Route path="/settings" component={() => <ProtectedRoute component={SettingsPage} />} />
         <Route component={NotFound} />
       </Switch>
     </div>

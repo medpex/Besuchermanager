@@ -1,6 +1,17 @@
 import express, { type Request, Response, NextFunction } from "express";
+import session from "express-session";
+import MemoryStore from "memorystore";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+import fs from "fs";
+
+// Ensure the uploads directory exists
+const uploadsDir = join(dirname(fileURLToPath(import.meta.url)), "../uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 const app = express();
 app.use(express.json());

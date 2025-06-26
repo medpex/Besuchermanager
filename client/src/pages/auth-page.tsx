@@ -53,7 +53,7 @@ export default function AuthPage() {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <Card className="w-[400px]">
         <CardHeader>
-          <CardTitle>Visitor Tracking System</CardTitle>
+          <CardTitle>Besuchererfassungssystem</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...loginForm}>
@@ -63,7 +63,7 @@ export default function AuthPage() {
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username</FormLabel>
+                    <FormLabel>Benutzername</FormLabel>
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
@@ -76,7 +76,7 @@ export default function AuthPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>Passwort</FormLabel>
                     <FormControl>
                       <Input type="password" {...field} />
                     </FormControl>
@@ -85,7 +85,7 @@ export default function AuthPage() {
                 )}
               />
               <Button type="submit" className="w-full">
-                Login
+                Anmelden
               </Button>
             </form>
           </Form>

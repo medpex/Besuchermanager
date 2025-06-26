@@ -23,7 +23,19 @@ type LineChartProps = {
 const WEEKDAY_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 // Ordnung für Zeitintervalle
-const TIME_INTERVAL_ORDER = ['08:00-10:00', '10:00-12:00', '12:00-14:00', '14:00-16:00', '16:00-18:00'];
+const TIME_INTERVAL_ORDER = [
+  '08:00-09:00', 
+  '09:00-10:00', 
+  '10:00-11:00', 
+  '11:00-12:00', 
+  '12:00-13:00', 
+  '13:00-14:00', 
+  '14:00-15:00', 
+  '15:00-16:00', 
+  '16:00-17:00', 
+  '17:00-18:00',
+  'Andere Zeit'
+];
 
 // Ordnung für Monate
 const MONTH_ORDER = ['January', 'February', 'March', 'April', 'May', 'June', 
@@ -177,7 +189,7 @@ export default function LineChart({
     setSeries(chartSeries);
   }, [data, xAxisType, height]);
 
-  if (!mounted || !chartOptions || !series.length) {
+  if (!mounted || !chartOptions || !series.length || !data?.length) {
     return (
       <Card className={className}>
         <CardHeader className="pb-2">

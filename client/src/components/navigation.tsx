@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { useUser } from "@/hooks/use-user";
 import { Button } from "@/components/ui/button";
+import { Settings, User } from "lucide-react";
 
 export default function Navigation() {
   const { user, logout } = useUser();
@@ -27,7 +28,16 @@ export default function Navigation() {
             </nav>
           </div>
           <div className="flex items-center gap-4">
-            <span>Angemeldet als {user?.username}</span>
+            <Link href="/settings">
+              <span className="text-gray-600 hover:text-gray-900 cursor-pointer flex items-center gap-1">
+                <Settings className="h-4 w-4" />
+                Einstellungen
+              </span>
+            </Link>
+            <span className="flex items-center gap-1">
+              <User className="h-4 w-4" />
+              {user?.username}
+            </span>
             <Button variant="outline" onClick={() => logout()}>
               Abmelden
             </Button>

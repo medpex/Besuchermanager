@@ -21,19 +21,37 @@ import {
   MapPin,
   BarChart as BarChartIcon,
   PieChart,
-  RefreshCcw
+  RefreshCcw,
+  Pencil,
+  Trash2,
+  Shield,
+  UserCog,
+  FileUp,
+  Upload
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useForm } from "react-hook-form";
 import type { SelectUser } from "@db/schema";
 import { useState, useMemo, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import CsvImportGuide from "@/components/csv-import-guide";
 
 type AdminUser = SelectUser & {
   visitCount?: number;
@@ -284,6 +302,8 @@ export default function AdminPage() {
   const { visits } = useVisits();
   const { toast } = useToast();
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const [isEditUserOpen, setIsEditUserOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [isVisitsOpen, setIsVisitsOpen] = useState(true);
 
   // Eindeutigen Schlüssel für jeden Benutzer erstellen
@@ -304,6 +324,14 @@ export default function AdminPage() {
   });
 
   const form = useForm({
+    defaultValues: {
+      username: "",
+      password: "",
+      isAdmin: false,
+    },
+  });
+
+  const editForm = useForm({
     defaultValues: {
       username: "",
       password: "",
@@ -486,6 +514,78 @@ export default function AdminPage() {
     }
   };
 
+  const onEditSubmit = async (data: any) => {
+    if (!selectedUser) return;
+    
+    try {
+      // Only send password if it's provided
+      const updateData = {...data};
+      if (!updateData.password) {
+        delete updateData.password;
+      }
+      
+      const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updateData),
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      toast({
+        title: "Erfolg",
+        description: "Benutzer erfolgreich aktualisiert",
+      });
+      setIsEditUserOpen(false);
+      editForm.reset();
+      refetch();
+    } catch (error: any) {
+      toast({
+        title: "Fehler",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditUser = (user: AdminUser) => {
+    setSelectedUser(user);
+    editForm.reset({
+      username: user.username,
+      password: "",
+      isAdmin: user.isAdmin
+    });
+    setIsEditUserOpen(true);
+  };
+
+  const handleDeleteUser = async (userId: number) => {
+    try {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      toast({
+        title: "Erfolg",
+        description: "Benutzer erfolgreich gelöscht",
+      });
+      refetch();
+    } catch (error: any) {
+      toast({
+        title: "Fehler",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const toggleUserStatus = async (userId: number, isActive: boolean) => {
     try {
       const response = await fetch(`/api/admin/users/${userId}`, {
@@ -511,6 +611,70 @@ export default function AdminPage() {
         description: error.message,
         variant: "destructive",
       });
+    }
+  };
+
+  // Add these state variables for CSV upload
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState<{
+    success: boolean;
+    totalProcessed?: number;
+    successCount?: number;
+    failedCount?: number;
+    failedRecords?: any[];
+    message?: string;
+  } | null>(null);
+
+  // Add CSV upload handler
+  const handleCsvUpload = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const file = formData.get('csvFile') as File;
+    
+    if (!file) {
+      setUploadResult({
+        success: false,
+        message: "Bitte wählen Sie eine CSV-Datei aus."
+      });
+      return;
+    }
+    
+    setIsUploading(true);
+    setUploadResult(null);
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('/api/admin/upload-csv', {
+        method: 'POST',
+        body: formData,
+        // No Content-Type header needed as it's set automatically with the correct boundary for multipart/form-data
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok) {
+        setUploadResult({
+          success: true,
+          totalProcessed: result.totalProcessed,
+          successCount: result.successCount,
+          failedCount: result.failedCount,
+          failedRecords: result.failedRecords,
+          message: `CSV-Datei erfolgreich verarbeitet. ${result.successCount} von ${result.totalProcessed} Einträgen importiert.`
+        });
+        // Refresh stats and visits after upload
+        refetch();
+      } else {
+        throw new Error(result.message || 'Fehler beim Hochladen');
+      }
+    } catch (error: any) {
+      setUploadResult({
+        success: false,
+        message: `Fehler beim CSV-Upload: ${error.message}`
+      });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -594,6 +758,68 @@ export default function AdminPage() {
             </Form>
           </DialogContent>
         </Dialog>
+        
+        {/* Edit User Dialog */}
+        <Dialog open={isEditUserOpen} onOpenChange={setIsEditUserOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Benutzer bearbeiten</DialogTitle>
+              <DialogDescription>
+                Bearbeiten Sie die Informationen für {selectedUser?.username}.
+                Lassen Sie das Passwortfeld leer, um das bestehende Passwort beizubehalten.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...editForm}>
+              <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+                <FormField
+                  control={editForm.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Benutzername</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Benutzername" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Passwort (leer lassen, um beizubehalten)</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="Neues Passwort" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="isAdmin"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center gap-2 space-y-0">
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormLabel>Administrator-Rechte</FormLabel>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <DialogFooter>
+                  <Button type="submit">Speichern</Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Tabs defaultValue="statistics" className="w-full">
@@ -626,36 +852,38 @@ export default function AdminPage() {
               </div>
               <ChevronsUpDown className="h-4 w-4 transition-transform duration-200 ease-in-out" />
             </CollapsibleTrigger>
-            <CollapsibleContent className="p-4 pt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <TopCategoriesCard data={stats?.topCategories} />
-                <LocationsCard 
-                  locations={statistics?.locations} 
-                  locationCounts={statistics?.locationCounts}
-                  totalVisits={statistics?.totalVisits}
-                />
-              </div>
+            {isVisitsOpen && (
+              <CollapsibleContent className="p-4 pt-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <TopCategoriesCard data={stats?.topCategories} />
+                  <LocationsCard 
+                    locations={statistics?.locations} 
+                    locationCounts={statistics?.locationCounts}
+                    totalVisits={statistics?.totalVisits}
+                  />
+                </div>
 
-              {/* Diagramme */}
-              <div className="mt-6 grid grid-cols-1 gap-6">
-                <StatsDisplay 
-                  data={stats?.weekday} 
-                  type="weekday" 
-                />
-                <StatsDisplay 
-                  data={stats?.timeInterval} 
-                  type="timeInterval" 
-                />
-                <StatsDisplay 
-                  data={stats?.month} 
-                  type="month" 
-                />
-                <StatsDisplay 
-                  data={stats?.subcategory} 
-                  type="subcategory" 
-                />
-              </div>
-            </CollapsibleContent>
+                {/* Diagramme */}
+                <div className="mt-6 grid grid-cols-1 gap-6">
+                  <StatsDisplay 
+                    data={stats?.weekday} 
+                    type="weekday" 
+                  />
+                  <StatsDisplay 
+                    data={stats?.timeInterval} 
+                    type="timeInterval" 
+                  />
+                  <StatsDisplay 
+                    data={stats?.month} 
+                    type="month" 
+                  />
+                  <StatsDisplay 
+                    data={stats?.subcategory} 
+                    type="subcategory" 
+                  />
+                </div>
+              </CollapsibleContent>
+            )}
           </Collapsible>
         </TabsContent>
         
@@ -1335,47 +1563,137 @@ export default function AdminPage() {
         </TabsContent>
 
         <TabsContent value="users">
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Benutzername</TableHead>
-                  <TableHead>Admin</TableHead>
-                  <TableHead className="text-right">Besuche</TableHead>
-                  <TableHead className="text-right">Aktionen</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users?.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.id}</TableCell>
-                    <TableCell>{user.username}</TableCell>
-                    <TableCell>
-                      {user.isAdmin ? (
-                        <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-                          Admin
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
-                          Benutzer
-                        </span>
+          <div className="flex flex-col gap-8">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl">CSV-Datei importieren</CardTitle>
+                <CardDescription>
+                  Laden Sie eine CSV-Datei hoch, um Besucherstatistiken zu importieren
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleCsvUpload} className="space-y-4">
+                  <div className="grid w-full max-w-sm items-center gap-1.5">
+                    <Label htmlFor="csvFile">CSV-Datei auswählen</Label>
+                    <Input id="csvFile" name="csvFile" type="file" accept=".csv" />
+                    <p className="text-sm text-gray-500">
+                      Die CSV-Datei muss folgende Spalten enthalten: timestamp, category, subcategory, office_location
+                    </p>
+                  </div>
+                  
+                  <Button type="submit" disabled={isUploading}>
+                    {isUploading ? (
+                      <>
+                        <RefreshCcw className="mr-2 h-4 w-4 animate-spin" />
+                        Wird hochgeladen...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Datei hochladen
+                      </>
+                    )}
+                  </Button>
+                  
+                  {uploadResult && (
+                    <div className={`mt-4 p-3 rounded-md ${uploadResult.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+                      <p className="font-medium">{uploadResult.message}</p>
+                      {uploadResult.success && uploadResult.failedCount && uploadResult.failedCount > 0 && (
+                        <div className="mt-2">
+                          <p className="font-medium">Fehlgeschlagene Einträge: {uploadResult.failedCount}</p>
+                          <div className="mt-2 max-h-32 overflow-y-auto text-xs">
+                            <pre className="whitespace-pre-wrap bg-gray-50 p-2 rounded-md">
+                              {JSON.stringify(uploadResult.failedRecords, null, 2)}
+                            </pre>
+                          </div>
+                        </div>
                       )}
-                    </TableCell>
-                    <TableCell className="text-right">{user.visitCount}</TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleUserStatus(user.id, !user.isActive)}
-                      >
-                        {user.isActive ? "Deaktivieren" : "Aktivieren"}
-                      </Button>
-                    </TableCell>
+                    </div>
+                  )}
+                </form>
+              </CardContent>
+            </Card>
+
+            <CsvImportGuide />
+
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Benutzername</TableHead>
+                    <TableHead>Rolle</TableHead>
+                    <TableHead className="text-right">Aktionen</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {users?.map((userItem) => (
+                    <TableRow key={userItem.id}>
+                      <TableCell className="font-medium">{userItem.id}</TableCell>
+                      <TableCell>{userItem.username}</TableCell>
+                      <TableCell>
+                        {userItem.isAdmin ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                            <Shield className="h-3 w-3" />
+                            Admin
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
+                            <Users className="h-3 w-3" />
+                            Benutzer
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditUser(userItem)}
+                            className="h-8 w-8 p-0"
+                            title="Benutzer bearbeiten"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          {userItem.id !== user?.id && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                                  title="Benutzer löschen"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Benutzer löschen</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Sind Sie sicher, dass Sie den Benutzer "{userItem.username}" löschen möchten? 
+                                    Diese Aktion kann nicht rückgängig gemacht werden.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                                  <AlertDialogAction 
+                                    onClick={() => handleDeleteUser(userItem.id)}
+                                    className="bg-red-500 hover:bg-red-700"
+                                  >
+                                    Löschen
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </TabsContent>
       </Tabs>
