@@ -42,22 +42,18 @@ export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     secret: process.env.REPL_ID || "porygon-supremacy",
     resave: false,
-    saveUninitialized: true,
-    cookie: {
-      secure: false,
-      sameSite: 'lax',
-      maxAge: 24 * 60 * 60 * 1000
-    },
+    saveUninitialized: false,
+    cookie: {},
     store: new MemoryStore({
-      checkPeriod: 86400000,
+      checkPeriod: 86400000, // prune expired entries every 24h
     }),
   };
 
-  if (app.get("env") === "production" && process.env.COOKIE_SECURE === 'true') {
+  if (app.get("env") === "production") {
     app.set("trust proxy", 1);
-    if (sessionSettings.cookie) {
-      sessionSettings.cookie.secure = true;
-    }
+    sessionSettings.cookie = {
+      secure: true,
+    };
   }
 
   app.use(session(sessionSettings));

@@ -27,17 +27,10 @@ export default function AuthPage() {
       } else {
         toast({ title: "Erfolg", description: "Login erfolgreich!" });
         
-        // Sofortige Weiterleitung mit hardRefresh
-        const hardRefresh = () => {
-          console.log("Performing hard refresh and redirect");
-          window.sessionStorage.setItem('auth_redirect', 'true');
-          window.location.href = '/'; 
-          setTimeout(() => {
-            window.location.reload(); // Erzwingt Reload vom Server statt Cache
-          }, 100);
-        };
-        // Sofort ausführen
-        hardRefresh();
+        // Kurze Verzögerung vor der Weiterleitung
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 1000);
       }
     } catch (error) {
       console.error("Login error:", error);

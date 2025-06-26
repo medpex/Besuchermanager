@@ -21,7 +21,7 @@ chmod +x install.sh
 # Temp-Ordner für die Dateien erstellen
 mkdir -p "$TEMP_DIR/besuchererfassungssystem"
 
-# Alle relevanten Dateien kopieren (außer Docker-Dateien und temporäre Dateien)
+# Alle relevanten Dateien kopieren (außer temporäre Dateien)
 echo "Kopiere Projektdateien..."
 cp -r \
   client \

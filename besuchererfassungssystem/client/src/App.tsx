@@ -40,7 +40,6 @@ function Router() {
       <Navigation />
       <Switch>
         <Route path="/" component={() => <ProtectedRoute component={Dashboard} />} />
-        <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />
         <Route path="/admin" component={() => <ProtectedRoute component={AdminPage} adminOnly />} />
         <Route component={NotFound} />
       </Switch>
